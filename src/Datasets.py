@@ -1,10 +1,11 @@
 import json
+import os
 
 import torch
 from torch.utils.data import Dataset
+
+import cv2
 import pandas as pd
-from torchvision.io import read_image
-import os
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -20,6 +21,11 @@ class ShapeNetDataset(Dataset):
         self.rendering_dir = rendering_dir
         self.taxonomy_ids = []
         self.data_ids = []
+
+        with open('data/shapenet_info.json') as json_file:
+            self.class_name_mapping = json.load(json_file)
+
+        self.classes = sorted(self.class_name_mapping.keys())
         
         with open(metadata_path) as json_file:
             metadata = json.load(json_file)
@@ -44,32 +50,31 @@ class ShapeNetDataset(Dataset):
                 png_files.append(line.strip())
 
         renderings = None
-
         # Load images into 4D tensors
         for i in png_files:
-            
-            image = read_image(renderings_path + '/' + i)
+            image = cv2.imread(renderings_path + '/' + i)
+            image = torch.from_numpy(image).permute(2,1,0)
             if renderings is None:
                 renderings = image.unsqueeze(0)
             else:
                 renderings = torch.cat((renderings, image.unsqueeze(0)), 0)
 
         # Set class label
-        class_label = shapenet_id.split('/')[0]       
+        class_label = self.classes.index(shapenet_id.split('/')[0])
         
         # Load voxel
         voxel = None
         with open(self.voxel_dir + '/' + shapenet_id + '/model.binvox', "rb") as fptr:
             voxel = read_as_3d_array(fptr).astype(np.float32)
 
-        return renderings, class_label, voxel
+        return shapenet_id, renderings, class_label, voxel
 
 
 if __name__ == '__main__':
     dataset = ShapeNetDataset('/media/andrew/Storage HDD/data/ShapeNet/ShapeNetRendering', '/media/andrew/Storage HDD/data/ShapeNet/ShapeNetVox32', 'data/ShapeNet.json')
-    renderings, class_label, voxel = dataset[0]
-
-    npimg = renderings[0, :3, :, :].numpy()
+    shapenet_id, renderings, class_label, voxel = dataset[10]
 
     
-    plt.imshow(np.transpose(npimg, (1, 2, 0)), interpolation='nearest')
+    tensor_image = renderings[0, :, :, :]
+    cv2.imshow('image',tensor_image.permute(2,1,0).numpy())
+    cv2.waitKey(0)
