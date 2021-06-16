@@ -2,14 +2,14 @@ import json
 import os
 
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 
 import cv2
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utils import read_as_3d_array
+from utils import read_as_3d_array, env_vars
 
 
 class ShapeNetDataset(Dataset):
@@ -78,10 +78,12 @@ class ShapeNetDataset(Dataset):
 
 
 if __name__ == '__main__':
-    # dataset = ShapeNetDataset('/media/andrew/Storage HDD/data/ShapeNet/ShapeNetRendering', '/media/andrew/Storage HDD/data/ShapeNet/ShapeNetVox32', 'data/ShapeNet.json')
-    # shapenet_id, renderings, class_label, voxel = dataset[10]
-    # tensor_image = renderings[0, :, :, :]
-    # cv2.imshow('image',tensor_image.permute(2,1,0).numpy())
-    # cv2.waitKey(0)
 
-    return
+    '''Trial/test code'''
+    dataset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], 'data/ShapeNet.json')
+    dataloader = DataLoader(dataset)
+    shapenet_id, renderings, class_label, voxel = next(iter(dataloader))
+    tensor_image = renderings[0, 0, :, :, :]
+
+    cv2.imshow('Test image',tensor_image.permute(2,1,0).numpy())
+    cv2.waitKey(0)

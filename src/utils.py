@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from dotenv import dotenv_values
+
+
 '''from ML3D team - Exercise 2'''
 def read_header(fp):
     """ Read binvox header. Mostly meant for internal use.
@@ -49,3 +52,6 @@ def read_as_3d_array(fp, fix_coords=True):
         axis_order = 'xzy'
     # return Voxels(data, dims, translate, scale, axis_order)
     return data
+
+
+env_vars = dotenv_values('.env')
