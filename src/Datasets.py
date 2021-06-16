@@ -15,11 +15,10 @@ from utils import read_as_3d_array
 class ShapeNetDataset(Dataset):
 
     def __init__(self, rendering_dir, voxel_dir, metadata_path, split='train'):
-        assert split in ['train', 'val', 'test']
+        assert split in ['train', 'val', 'test', 'overfit']
 
         self.voxel_dir = voxel_dir
         self.rendering_dir = rendering_dir
-        self.taxonomy_ids = []
         self.data_ids = []
 
         with open('data/shapenet_info.json') as json_file:
@@ -27,12 +26,20 @@ class ShapeNetDataset(Dataset):
 
         self.classes = sorted(self.class_name_mapping.keys())
         
-        with open(metadata_path) as json_file:
-            metadata = json.load(json_file)
-            for i in metadata:
-                self.taxonomy_ids.append(i['taxonomy_id'])
-                for j in i[split]:
-                    self.data_ids.append(i['taxonomy_id'] + '/' + j)
+        
+        if split == 'overfit':
+            with open('data/overfit.txt') as f:
+                while True:
+                    line = f.readline()
+                    if not line:
+                        break
+                    self.data_ids.append(line)
+        else:
+            with open(metadata_path) as json_file:
+                metadata = json.load(json_file)
+                for i in metadata:
+                    for j in i[split]:  
+                        self.data_ids.append(i['taxonomy_id'] + '/' + j)
 
     def __len__(self):
         return len(self.data_ids)
@@ -71,10 +78,10 @@ class ShapeNetDataset(Dataset):
 
 
 if __name__ == '__main__':
-    dataset = ShapeNetDataset('/media/andrew/Storage HDD/data/ShapeNet/ShapeNetRendering', '/media/andrew/Storage HDD/data/ShapeNet/ShapeNetVox32', 'data/ShapeNet.json')
-    shapenet_id, renderings, class_label, voxel = dataset[10]
+    # dataset = ShapeNetDataset('/media/andrew/Storage HDD/data/ShapeNet/ShapeNetRendering', '/media/andrew/Storage HDD/data/ShapeNet/ShapeNetVox32', 'data/ShapeNet.json')
+    # shapenet_id, renderings, class_label, voxel = dataset[10]
+    # tensor_image = renderings[0, :, :, :]
+    # cv2.imshow('image',tensor_image.permute(2,1,0).numpy())
+    # cv2.waitKey(0)
 
-    
-    tensor_image = renderings[0, :, :, :]
-    cv2.imshow('image',tensor_image.permute(2,1,0).numpy())
-    cv2.waitKey(0)
+    return
