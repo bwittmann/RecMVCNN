@@ -33,7 +33,7 @@ class ShapeNetDataset(Dataset):
                     line = f.readline()
                     if not line:
                         break
-                    self.data_ids.append(line)
+                    self.data_ids.append(line[:-1])
         else:
             with open(metadata_path) as json_file:
                 metadata = json.load(json_file)
