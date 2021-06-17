@@ -19,9 +19,14 @@ def main(args):
 
     # Get model
     model = get_model(args)
+    model.to(device)
 
     # Get data loaders
-    train_dataloader = get_dataloader(args, env_vars, 'overfit') # TODO: dont hardcode split
+    if args.overfit:
+        train_dataloader = get_dataloader(args, env_vars, 'overfit')
+    else:
+        train_dataloader = get_dataloader(args, env_vars, 'train')
+
     val_dataloader = get_dataloader(args, env_vars, 'val')
 
     # Train
@@ -39,7 +44,7 @@ def get_dataloader(args, env_vars, split):
     return DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
 
 def get_model(args):
-    return MVCNN(args.mvcnn_num_classes, args.mvcnn_num_views)
+    return MVCNN(args.mvcnn_num_classes, args.mvcnn_backbone)
 
 
 if __name__ == "__main__":
@@ -47,10 +52,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # Standard arguments
-    parser.add_argument("--batch_size", type=int, help="batch size", default=14)
+    parser.add_argument("--batch_size", type=int, help="batch size", default=2)
     parser.add_argument("--epoch", type=int, help="number of epochs", default=50)
     parser.add_argument("--verbose", type=int, help="iterations of showing verbose", default=10)
     parser.add_argument("--seed", type=int, help="random seed", default=42)
+    parser.add_argument("--overfit", action="store_true", help="use reduced dataset for overfitting")
+    parser.add_argument("--tag", type=str, help="experiment tag for tensorboard logger", default='')
+    parser.add_argument("--val_step", type=int, help="step to validate the model", default=100)
+
 
     # Arguments related training
     parser.add_argument("--lr", type=float, help="learning rate", default=1e-3)
@@ -60,8 +69,10 @@ if __name__ == "__main__":
     parser.add_argument("--wd", type=float, help="weight decay", default=1e-5)
 
     # Arguments related to MVCNN model
-    parser.add_argument("--mvcnn_num_classes", type=int, help="number of classes", default=40)
-    parser.add_argument("--mvcnn_num_views", type=int, help="number of views per object", default=12)
+    parser.add_argument("--mvcnn_num_classes", type=int, help="number of classes", default=13)
+    # TODO: add more choices
+    parser.add_argument("--mvcnn_backbone", type=str, choices=['vgg16'], help="feature extraction backbone", default='vgg16')
+
 
     # Arguments related to datasets
     # TODO: add more choices
