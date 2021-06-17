@@ -5,27 +5,44 @@ import torchvision.models as models
 
 class MVCNN(nn.Module):
 
-    def __init__(self, num_classes=40, num_views=12):
+    def __init__(self, num_classes, backbone):
+        """
+        Inspired by https://github.com/RBirkeland/MVCNN-PyTorch.
+        """
         super(MVCNN, self).__init__()
         self.num_classes = num_classes
-        # I do not know whether this parameter might be needed for reshaping the images
-        # Probably this value can be inferred from the shape of the input x!
-        self.num_views = num_views
 
-        vgg = models.vgg16(pretrained=True)
-        self.vgg_features = vgg.features
-        self.vgg_classifier = vgg.classifier
-        self.vgg_classifier[6] = nn.Linear(4096, num_classes)
+        # TODO add more options
+        if backbone == 'vgg16':
+            vgg = models.vgg16(pretrained=True)
+            self.features = vgg.features
+            # Implement own classifier as we have different image size.
+            self.classifier = nn.Sequential(
+                nn.Linear(in_features=512*4*4, out_features=4096, bias=True),
+                nn.ReLU(inplace=True),
+                nn.Dropout(p=0.5, inplace=False),
+                nn.Linear(in_features=4096, out_features=4096),
+                nn.ReLU(inplace=True),
+                nn.Dropout(p=0.5, inplace=False),
+                nn.Linear(in_features= 4096, out_features=num_classes)
+            )
+        else:
+            raise NotImplementedError
 
     def forward(self, x):
-        print("shape of x", x.shape)
-        y = self.vgg_features(x)
-        print("shape after vgg_features", y.shape)
-        # I am unsure if this is the correct way to reshape the output of the classifier!
-        y = y.view((int(x.shape[0]/self.num_views),
-                   self.num_views, y.shape[-3], y.shape[-2], y.shape[-1]))
-        y = torch.max(y,1)[0].view(y.shape[0],-1)
-        print("shape before classification", y.shape)
-        y = self.vgg_classifier(y)
-        print("shape after classification", y.shape)
-        return y
+        # Use shared backbone to extract features of input images
+        x = x.transpose(0, 1)
+
+        feature_list = []
+        for view in x:
+            view_features = self.features(view)
+            view_features = view_features.view(view_features.shape[0], -1)
+            feature_list.append(view_features)
+
+        # View pooling
+        max_features = feature_list[0]
+        for view_features in feature_list[0:]:
+            max_features = torch.max(max_features, view_features)
+
+        ret = self.classifier(max_features)
+        return ret
