@@ -59,7 +59,9 @@ if __name__ == "__main__":
     parser.add_argument("--overfit", action="store_true", help="use reduced dataset for overfitting")
     parser.add_argument("--tag", type=str, required=True, help="experiment tag for tensorboard logger", default='')
     parser.add_argument("--val_step", type=int, help="step to validate the model", default=1000)
-
+    parser.add_argument("--no_validation", action="store_true", help="do not validate")
+    # TODO: implement
+    parser.add_argument("--use_checkpoint", type=str, help="specify the checkpoint root", default="")
 
     # Arguments related training
     parser.add_argument("--lr", type=float, help="learning rate", default=5e-5)
@@ -73,10 +75,11 @@ if __name__ == "__main__":
     # TODO: add more choices
     parser.add_argument("--mvcnn_backbone", type=str, choices=['vgg16'], help="feature extraction backbone", default='vgg16')
 
-
     # Arguments related to datasets
     # TODO: add more choices
     parser.add_argument("--dataset", type=str, choices=['scannet'], help="used dataset", default='scannet')
+    # TODO: implement
+    parser.add_argument("--augment", action="store_true", help="use data augmentation")
 
     args = parser.parse_args()
 

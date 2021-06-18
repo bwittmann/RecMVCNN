@@ -12,7 +12,7 @@ class MVCNN(nn.Module):
         super(MVCNN, self).__init__()
         self.num_classes = num_classes
 
-        # TODO add more options
+        # TODO add more options (resnet-50, resnet-101, inception-v3)
         if backbone == 'vgg16':
             vgg = models.vgg16(pretrained=True)
             self.features = vgg.features
