@@ -52,18 +52,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # Standard arguments
-    parser.add_argument("--batch_size", type=int, help="batch size", default=2)
-    parser.add_argument("--epoch", type=int, help="number of epochs", default=50)
+    parser.add_argument("--batch_size", type=int, help="batch size", default=14)
+    parser.add_argument("--epoch", type=int, help="number of epochs", default=500)
     parser.add_argument("--verbose", type=int, help="iterations of showing verbose", default=10)
     parser.add_argument("--seed", type=int, help="random seed", default=42)
     parser.add_argument("--overfit", action="store_true", help="use reduced dataset for overfitting")
-    parser.add_argument("--tag", type=str, help="experiment tag for tensorboard logger", default='')
-    parser.add_argument("--val_step", type=int, help="step to validate the model", default=100)
+    parser.add_argument("--tag", type=str, required=True, help="experiment tag for tensorboard logger", default='')
+    parser.add_argument("--val_step", type=int, help="step to validate the model", default=1000)
 
 
     # Arguments related training
-    parser.add_argument("--lr", type=float, help="learning rate", default=1e-3)
-    parser.add_argument("--lr_decay_factor", type=float, help="decay factor of the lr scheduler", default=0.1)
+    parser.add_argument("--lr", type=float, help="learning rate", default=5e-5)
+    parser.add_argument("--lr_decay_factor", type=float, help="decay factor of the lr scheduler", default=0.5)
     parser.add_argument("--lr_decay_patience", type=float, help="patience of the lr scheduler", default=10)
     parser.add_argument("--lr_decay_cooldown", type=float, help="cooldown of the lr scheduler", default=0)
     parser.add_argument("--wd", type=float, help="weight decay", default=1e-5)
