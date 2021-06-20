@@ -7,6 +7,7 @@ To use this project, you must set several envrionment variables beforehand in .e
 ```
 SHAPENET_VOXEL_DATASET_PATH="/media/andrew/Storage HDD/data/ShapeNet/ShapeNetRendering"
 SHAPENET_RENDERING_DATASET_PATH="/media/andrew/Storage HDD/data/ShapeNet/ShapeNetVox32"
+MODEL_ROOT="/home/bastian/git/ML3D-MVCNN"
 ```
 
 ## Data
@@ -14,4 +15,3 @@ SHAPENET_RENDERING_DATASET_PATH="/media/andrew/Storage HDD/data/ShapeNet/ShapeNe
 For this project, we use the following ShapeNet data: 
 - ShapeNet rendering images: http://cvgl.stanford.edu/data2/ShapeNetRendering.tgz
 - ShapeNet voxelized models: http://cvgl.stanford.edu/data2/ShapeNetVox32.tgz
-
