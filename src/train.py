@@ -33,6 +33,8 @@ def train(device, model, args, train_dataloader, val_dataloader):
     best_accuracy_classification = np.inf
     correct_classification = 0
     total_classification = 0
+    train_correct_classification = 0
+    train_total_classification = 0
 
     model.train()
     try:
@@ -53,17 +55,25 @@ def train(device, model, args, train_dataloader, val_dataloader):
                 train_loss_classification.backward()
                 optimizer.step()
 
+                correct_pred = evaluate_classification(predictions, class_labels)
+                train_total_classification += predictions.shape[0]
+                train_correct_classification += correct_pred
+
                 train_loss_running_classification += train_loss_classification.item()
                 iteration = (epoch - 1) * len(train_dataloader) + batch_idx
 
                 # Print and log train loss and train acc
                 if iteration % args.verbose == 0:
-                    # Logging 
+                    train_accuracy_classificaton = 100 * train_correct_classification / train_total_classification
+                    # Logging
                     print('[{}/{}] train_loss: {}'.format(epoch, iteration, train_loss_running_classification / args.verbose))
                     tb_logger.add_scalar('loss/train_cls', train_loss_running_classification / args.verbose, iteration)
+                    tb_logger.add_scalar('acc/train_cls', train_accuracy_classificaton, iteration)
                     tb_logger.add_scalar('epoch', epoch, iteration)
 
                     train_loss_running_classification = 0.
+                    train_correct_classification = 0
+                    train_total_classification = 0
 
                 # Validate on validation set
                 if iteration % args.val_step == 0 and not args.no_validation:
