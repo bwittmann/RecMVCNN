@@ -41,7 +41,7 @@ def get_dataloader(args, env_vars, split):
     else:
         raise NotImplementedError
             
-    return DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
+    return DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
 
 def get_model(args):
     return MVCNN(args.mvcnn_num_classes, args.mvcnn_backbone)
