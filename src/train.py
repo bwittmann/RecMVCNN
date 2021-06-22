@@ -131,7 +131,7 @@ def train(device, model, args, train_dataloader, val_dataloader):
 
 def save_model(model, epoch=None, optimizer=None, args=None, checkpoint=False):
     # TODO: test, not sure if scheduler also part of checkpoint
-    checkpoint_path = os.path.join(dotenv_values('.env')['MODEL_ROOT'], 'outputs/{}'.format(args.tag))
+    checkpoint_path = os.path.join(dotenv_values('.env')['PROJECT_DIR_PATH'], 'outputs/{}'.format(args.tag))
     if not os.path.exists(checkpoint_path):
         os.makedirs(checkpoint_path)
 

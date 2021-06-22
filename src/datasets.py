@@ -17,12 +17,12 @@ class ShapeNetDataset(Dataset):
         self.rendering_dir = rendering_dir
         self.data_ids = []
 
-        with open(f'{env_vars["REPOS_PATH"]}/data/shapenet_info.json') as json_file:
+        with open(f'{env_vars["PROJECT_DIR_PATH"]}/data/shapenet_info.json') as json_file:
             self.class_name_mapping = json.load(json_file)
 
         self.classes = sorted(self.class_name_mapping.keys())
 
-        with open(f'{env_vars["REPOS_PATH"]}/data/{split}.txt') as f:
+        with open(f'{env_vars["PROJECT_DIR_PATH"]}/data/{split}.txt') as f:
             while True:
                 line = f.readline()
                 if not line:
