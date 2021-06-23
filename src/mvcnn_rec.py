@@ -19,20 +19,23 @@ class MVCNNRec(nn.Module):
             vgg = models.vgg16(pretrained=True)
             self.features = vgg.features
             in_features = 512*4*4
+            in_channels = 1024
         elif backbone == 'resnet18': # num params: 11.2M, out dim: [B, 512, 5, 5]
             resnet = models.resnet18(pretrained=True)
             self.features = nn.Sequential(*list(resnet.children())[:-2])
             in_features = 512*5*5
+            in_channels = 1600
         elif backbone == 'mobilenetv3l': # num params: 3.0M, out dim: [B, 960, 5, 5]
             mobnet = models.mobilenet_v3_large(pretrained=True)
-            [print(_) for _ in mobnet.named_children()]
             self.features = nn.Sequential(*list(mobnet.children())[:-2])
             # TODO: too big -> reduce if possible or use pooling? do we loose spacial infos?
             in_features = 960*5*5
+            in_channels = 3000
         elif backbone == 'mobilenetv3s': # num params: 930k, out dim; [B, 576, 5, 5]
             mobnet = models.mobilenet_v3_small(pretrained=True)
             self.features = nn.Sequential(*list(mobnet.children())[:-2])
             in_features = 576*5*5
+            in_channels = 1800
         else:
             raise NotImplementedError
 
@@ -52,7 +55,7 @@ class MVCNNRec(nn.Module):
         # TODO: think of adding bias, num channels too much?
         self.decoder_features = nn.Sequential(
             # Layer 1: out [B, 256, 4, 4, 4]
-            nn.ConvTranspose3d(in_channels=1024, out_channels=256, kernel_size=4, stride=2, bias=False, padding=1),
+            nn.ConvTranspose3d(in_channels=in_channels, out_channels=256, kernel_size=4, stride=2, bias=False, padding=1),
             nn.BatchNorm3d(256),
             nn.ReLU(),
             # Layer 2: out [B, 128, 8, 8, 8]
@@ -95,13 +98,12 @@ class MVCNNRec(nn.Module):
         # Get classificaton return
         cls_ret = self.classifier(max_features) # [B, num_classes]
 
-        '''
         # Decode view_features into decoded features and generated volumes
         raw_decoded_features_list = []
         generated_volume_list = []
         # Decoding of features for reconstruction
         for view_features in feature_list:
-            view_features = view_features.view(-1, 1024, 2, 2, 2) # [B, 1024, 2, 2, 2]
+            view_features = view_features.view(batch_size, -1, 2, 2, 2) # [B, C, 2, 2, 2]
             decoded_features = self.decoder_features(view_features) # [B, 32, 32, 32, 32]
             raw_decoded_features = decoded_features
 
@@ -111,7 +113,5 @@ class MVCNNRec(nn.Module):
 
             generated_volume_list.append(generated_volume.squeeze())
             raw_decoded_features_list.append(raw_decoded_features)
-        '''
-
 
         return cls_ret #, generated_volume_list, raw_decoded_features_list
