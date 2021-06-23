@@ -14,36 +14,39 @@ class MVCNNRec(nn.Module):
         super().__init__()
         self.num_classes = num_classes
 
+        # Backbone for the 2D feature extraction
         if backbone == 'vgg16': # num params: 14.7M, out dim: [B, 512, 4, 4]
             vgg = models.vgg16(pretrained=True)
-            [print(mod) for mod in vgg.named_children()]
             self.features = vgg.features
-            # Implement own classifier as we have different image size.
-            self.classifier = nn.Sequential(
-                nn.Linear(in_features=512*4*4, out_features=4096, bias=True),
-                nn.ReLU(inplace=True),
-                nn.Dropout(p=0.5, inplace=False),
-                nn.Linear(in_features=4096, out_features=4096),
-                nn.ReLU(inplace=True),
-                nn.Dropout(p=0.5, inplace=False),
-                nn.Linear(in_features= 4096, out_features=num_classes)
-            )
+            in_features = 512*4*4
         elif backbone == 'resnet18': # num params: 11.2M, out dim: [B, 512, 5, 5]
             resnet = models.resnet18(pretrained=True)
             self.features = nn.Sequential(*list(resnet.children())[:-2])
-            # TODO: issue that all backbones give different feature dimensions
-
-
+            in_features = 512*5*5
         elif backbone == 'mobilenetv3l': # num params: 3.0M, out dim: [B, 960, 5, 5]
             mobnet = models.mobilenet_v3_large(pretrained=True)
+            [print(_) for _ in mobnet.named_children()]
             self.features = nn.Sequential(*list(mobnet.children())[:-2])
-
+            # TODO: too big -> reduce if possible or use pooling? do we loose spacial infos?
+            in_features = 960*5*5
         elif backbone == 'mobilenetv3s': # num params: 930k, out dim; [B, 576, 5, 5]
             mobnet = models.mobilenet_v3_small(pretrained=True)
             self.features = nn.Sequential(*list(mobnet.children())[:-2])
-
+            in_features = 576*5*5
         else:
             raise NotImplementedError
+
+        # Classifier for the classification task from 2D images
+        self.classifier = nn.Sequential(
+            nn.Linear(in_features=in_features, out_features=4096, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5, inplace=False),
+            # TODO: think about cutting this layer 
+            nn.Linear(in_features=4096, out_features=4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5, inplace=False),
+            nn.Linear(in_features= 4096, out_features=num_classes)
+        )
 
         # Decoder for the reconstruction of 3D features
         # TODO: think of adding bias, num channels too much?
@@ -73,6 +76,8 @@ class MVCNNRec(nn.Module):
         )
 
     def forward(self, x):
+        batch_size = x.shape[0]
+
         # Use shared backbone to extract features of input images
         x = x.transpose(0, 1) # [V, B, 3, H, W] rgb images
 
@@ -90,6 +95,8 @@ class MVCNNRec(nn.Module):
         # Get classificaton return
         cls_ret = self.classifier(max_features) # [B, num_classes]
 
+        '''
+        # Decode view_features into decoded features and generated volumes
         raw_decoded_features_list = []
         generated_volume_list = []
         # Decoding of features for reconstruction
@@ -104,6 +111,7 @@ class MVCNNRec(nn.Module):
 
             generated_volume_list.append(generated_volume.squeeze())
             raw_decoded_features_list.append(raw_decoded_features)
+        '''
 
 
         return cls_ret #, generated_volume_list, raw_decoded_features_list
