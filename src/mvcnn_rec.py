@@ -1,43 +1,109 @@
 import torch
 import torch.nn as nn
-from torch.nn.modules import padding
 import torchvision.models as models
 
 
-class MVCNNRec(nn.Module):
-
-    def __init__(self, num_classes, backbone):
-        """
+class ReconstructionMVCNN(nn.Module):
+    """
         Inspired by:
         - https://github.com/RBirkeland/MVCNN-PyTorch
         - https://github.com/hzxie/Pix2Vox/tree/Pix2Vox-F
-        """
+    """
+
+    def __init__(self, num_classes, backbone_type, no_reconstruction):
         super().__init__()
         self.num_classes = num_classes
+        self.no_reconstuction = no_reconstruction
 
+        # Backbone to extract 2D features
+        self.features = Backbone(backbone_type)
+        in_features = self.features.in_features
+        in_channels = self.features.in_channels
+
+        # Decoder to decode reconstructions from 2D featues of each image
+        self.decoder = Decoder(in_channels)
+
+        # Classifier for the classification task from 2D image features
+        self.classifier = nn.Sequential(
+            nn.Linear(in_features=in_features, out_features=4096, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5, inplace=False),
+            # TODO: think about cutting this layer
+            nn.Linear(in_features=4096, out_features=4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5, inplace=False),
+            nn.Linear(in_features= 4096, out_features=num_classes)
+        )
+
+    def forward(self, x):
+        batch_size = x.shape[0]
+
+        # Use shared backbone to extract features of input images
+        x = x.transpose(0, 1) # [V, B, 3, H, W] rgb images
+
+        feature_list = []
+        for view in x:
+            view_features = self.features(view) # see backbones for shape
+            feature_list.append(view_features)
+
+        # View pooling for classification results
+        max_features = feature_list[0].view(view_features.shape[0], -1)
+        for view_features in feature_list[0:]:
+            view_features = view_features.view(view_features.shape[0], -1)
+            max_features = torch.max(max_features, view_features) # [B, in_features]
+
+        # Get classificaton return
+        cls_ret = self.classifier(max_features) # [B, num_classes]
+        if self.no_reconstuction:
+            return cls_ret
+
+        generated_volume_list, raw_decoded_feature_list = self.decoder(feature_list)
+
+        # TODO: Fusion module to fuse lists
+
+        return cls_ret #, rec_ret
+
+
+
+class FusionModule(nn.Module):
+    """
+    Inspired by:
+    - https://github.com/hzxie/Pix2Vox/tree/Pix2Vox-F
+    """
+    def __init__(self):
+        super().__init__()
+        pass
+
+
+class Backbone(nn.Module):
+    """
+        Backbone for the 2D feature extraction
+    """
+    def __init__(self, backbone_type):
+        super().__init__()
         # Backbone for the 2D feature extraction
-        if backbone == 'vgg16': # num params: 14.7M, out dim: [B, 512, 4, 4]
+        if backbone_type == 'vgg16': # num params: 14.7M, out dim: [B, 512, 4, 4]
             vgg = models.vgg16(pretrained=True)
             self.features = vgg.features
-            in_features = 512*4*4
-            in_channels = 1024
-        elif backbone == 'resnet18': # num params: 11.2M, out dim: [B, 512, 5, 5]
+            self.in_features = 512*4*4
+            self.in_channels = 1024
+        elif backbone_type == 'resnet18': # num params: 11.2M, out dim: [B, 512, 5, 5]
             resnet = models.resnet18(pretrained=True)
             self.features = nn.Sequential(*list(resnet.children())[:-2])
-            in_features = 512*5*5
-            in_channels = 1600
-        elif backbone == 'mobilenetv3l': # num params: 3.0M, out dim: [B, 960, 5, 5]
+            self.in_features = 512*5*5
+            self.in_channels = 1600
+        elif backbone_type == 'mobilenetv3l': # num params: 3.0M, out dim: [B, 960, 5, 5]
             mobnet = models.mobilenet_v3_large(pretrained=True)
             self.features = nn.Sequential(*list(mobnet.children())[:-2])
             # TODO: too big -> reduce if possible or use pooling? do we loose spacial infos?
-            in_features = 960*5*5
-            in_channels = 3000
-        elif backbone == 'mobilenetv3s': # num params: 930k, out dim; [B, 576, 5, 5]
+            self.in_features = 960*5*5
+            self.in_channels = 3000
+        elif backbone_type == 'mobilenetv3s': # num params: 930k, out dim; [B, 576, 5, 5]
             mobnet = models.mobilenet_v3_small(pretrained=True)
             self.features = nn.Sequential(*list(mobnet.children())[:-2])
-            in_features = 576*5*5
-            in_channels = 1800
-        elif backbone == 'test':
+            self.in_features = 576*5*5
+            self.in_channels = 1800
+        elif backbone_type == 'test':
             resnet = models.resnet18(pretrained=True)
             self.features = nn.Sequential(
                 *list(resnet.children())[:-4],
@@ -54,23 +120,22 @@ class MVCNNRec(nn.Module):
                 nn.ReLU(),
                 nn.MaxPool2d(kernel_size=2),
             )
-            in_features = 64*4*4
-            in_channels = 128
+            self.in_features = 64*4*4
+            self.in_channels = 128
         else:
             raise NotImplementedError
 
-        # Classifier for the classification task from 2D images
-        self.classifier = nn.Sequential(
-            nn.Linear(in_features=in_features, out_features=4096, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Dropout(p=0.5, inplace=False),
-            # TODO: think about cutting this layer
-            nn.Linear(in_features=4096, out_features=4096),
-            nn.ReLU(inplace=True),
-            nn.Dropout(p=0.5, inplace=False),
-            nn.Linear(in_features= 4096, out_features=num_classes)
-        )
+    def forward(self, x):
+        return self.features(x)
 
+
+class Decoder(nn.Module):
+    """
+    Inspired by:
+    - https://github.com/hzxie/Pix2Vox/tree/Pix2Vox-F
+     """
+    def __init__(self, in_channels):
+        super().__init__()
         # Decoder for the reconstruction of 3D features
         # TODO: think of adding bias, num channels too much (vanilla version: 392 channels) -> network that reduces channels and spacial dim
         self.decoder_features = nn.Sequential(
@@ -98,30 +163,13 @@ class MVCNNRec(nn.Module):
             nn.Sigmoid()
         )
 
-    def forward(self, x):
-        batch_size = x.shape[0]
+    def forward(self, feature_list):
+        batch_size = feature_list[0].shape[0]
 
-        # Use shared backbone to extract features of input images
-        x = x.transpose(0, 1) # [V, B, 3, H, W] rgb images
-
-        feature_list = []
-        for view in x:
-            view_features = self.features(view) # see backbones for shape
-            feature_list.append(view_features)
-
-        # View pooling for classification results
-        max_features = feature_list[0].view(view_features.shape[0], -1)
-        for view_features in feature_list[0:]:
-            view_features = view_features.view(view_features.shape[0], -1)
-            max_features = torch.max(max_features, view_features) # [B, in_features]
-
-        # Get classificaton return
-        cls_ret = self.classifier(max_features) # [B, num_classes]
-
-        # Decode view_features into decoded features and generated volumes
         raw_decoded_features_list = []
         generated_volume_list = []
-        # Decoding of features for reconstruction
+
+        # Decode view_features into decoded features and generated volumes for reconstruction
         for view_features in feature_list:
             view_features = view_features.view(batch_size, -1, 2, 2, 2) # [B, C, 2, 2, 2]
             decoded_features = self.decoder_features(view_features) # [B, 8, 32, 32, 32]
@@ -134,4 +182,5 @@ class MVCNNRec(nn.Module):
             generated_volume_list.append(generated_volume.squeeze())
             raw_decoded_features_list.append(raw_decoded_features)
 
-        return cls_ret #, generated_volume_list, raw_decoded_features_list
+        return generated_volume_list, raw_decoded_features_list
+    
