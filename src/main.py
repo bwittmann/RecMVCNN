@@ -7,6 +7,7 @@ from dotenv import dotenv_values
 
 from train import train
 from mvcnn import MVCNN
+from mvcnn_rec import ReconstructionMVCNN
 from datasets import ShapeNetDataset
 
 
@@ -44,7 +45,7 @@ def get_dataloader(args, env_vars, split):
     return DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
 
 def get_model(args):
-    return MVCNN(args.mvcnn_num_classes, args.mvcnn_backbone)
+    return ReconstructionMVCNN(args.num_classes, args.backbone, args.no_reconstruction)
 
 
 if __name__ == "__main__":
@@ -64,16 +65,18 @@ if __name__ == "__main__":
     parser.add_argument("--use_checkpoint", type=str, help="specify the checkpoint root", default="")
 
     # Arguments related training
-    parser.add_argument("--lr", type=float, help="learning rate", default=5e-5)
+    parser.add_argument("--lr", type=float, help="learning rate", default=1e-5)
     parser.add_argument("--lr_decay_factor", type=float, help="decay factor of the lr scheduler", default=0.5)
     parser.add_argument("--lr_decay_patience", type=float, help="patience of the lr scheduler", default=10)
     parser.add_argument("--lr_decay_cooldown", type=float, help="cooldown of the lr scheduler", default=0)
     parser.add_argument("--wd", type=float, help="weight decay", default=1e-5)
 
     # Arguments related to MVCNN model
-    parser.add_argument("--mvcnn_num_classes", type=int, help="number of classes", default=13)
-    # TODO: add more choices
-    parser.add_argument("--mvcnn_backbone", type=str, choices=['vgg16'], help="feature extraction backbone", default='vgg16')
+    parser.add_argument("--no_reconstruction", action="store_true", help="no reconstruction, only classification")
+    parser.add_argument("--num_classes", type=int, help="number of classes", default=13)
+    parser.add_argument("--backbone", type=str, choices=['vgg16', 'resnet18', 'mobilenetv3l', 'mobilenetv3s', 'test'], 
+                        help="feature extraction backbone", default='vgg16')
+    # TODO: add num views
 
     # Arguments related to datasets
     # TODO: add more choices
