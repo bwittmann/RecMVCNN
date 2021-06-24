@@ -21,6 +21,26 @@ def main(args):
     model = get_model(args)
     model.to(device)
 
+    # Print number of model parameters
+    params_trainable = sum(param.numel() for param in model.parameters() if param.requires_grad)
+    params_general = sum(param.numel() for param in model.parameters())
+    backbone_params_trainable = sum(param.numel() for param in model.features.parameters() if param.requires_grad)
+    backbone_params_general = sum(param.numel() for param in model.features.parameters())
+    decoder_params_trainable = sum(param.numel() for param in model.decoder.parameters() if param.requires_grad)
+    decoder_params_general = sum(param.numel() for param in model.decoder.parameters())
+    classifier_params_trainable = sum(param.numel() for param in model.classifier.parameters() if param.requires_grad)
+    classifier_params_general = sum(param.numel() for param in model.classifier.parameters())
+    # TODO: implement
+    #fusion_module_params_trainable = sum(param.numel() for param in model.fusion_module.parameters() if param.requires_grad)
+    #fusion_module_params_general = sum(param.numel() for param in model.fusion_module.parameters())
+
+    print('model parameters: [{:,}/{:,}]'.format(params_trainable, params_general))
+    print('backbone parameters: [{:,}/{:,}]'.format(backbone_params_trainable, backbone_params_general))
+    print('backbone parameters: [{:,}/{:,}]'.format(backbone_params_trainable, backbone_params_general))
+    print('classifier parameters: [{:,}/{:,}]'.format(classifier_params_trainable, classifier_params_general))
+    print('decoder parameters: [{:,}/{:,}]'.format(decoder_params_trainable, decoder_params_general))
+    #print('fusion module parameters: [{:,}/{:,}]'.format(fusion_module_params_trainable, fusion_module_params_general))
+
     # Get data loaders
     if args.overfit:
         train_dataloader = get_dataloader(args, env_vars, 'overfit')
@@ -64,7 +84,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_checkpoint", type=str, help="specify the checkpoint root", default="")
 
     # Arguments related training
-    parser.add_argument("--lr", type=float, help="learning rate", default=1e-5)
+    parser.add_argument("--lr", type=float, help="learning rate", default=5e-5)
     parser.add_argument("--lr_decay_factor", type=float, help="decay factor of the lr scheduler", default=0.5)
     parser.add_argument("--lr_decay_patience", type=float, help="patience of the lr scheduler", default=10)
     parser.add_argument("--lr_decay_cooldown", type=float, help="cooldown of the lr scheduler", default=0)
