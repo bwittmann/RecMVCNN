@@ -50,7 +50,7 @@ def train(device, model, args, train_dataloader, val_dataloader):
         # Training loop
         for epoch in range(1, args.epoch + 1):
             print('Starting epoch:', epoch)
-            for batch_idx, batch in enumerate(train_dataloader):
+            for batch_idx, batch in tqdm(enumerate(train_dataloader)):
 
                 _, renderings, class_labels, voxels = batch
                 renderings, class_labels, voxels = renderings.to(device), class_labels.to(device), voxels.to(device)
@@ -113,7 +113,7 @@ def train(device, model, args, train_dataloader, val_dataloader):
                             val_loss_classification = criterion_classification(predictions_classification, class_labels)
                             val_loss_running_classification += val_loss_classification
 
-                            if predictions_reconstruction:
+                            if predictions_reconstruction !=None:
                                 val_loss_reconstruction = criterion_reconstruction(predictions_reconstruction, voxels)
                                 val_loss_running_reconstruction += val_loss_reconstruction.item()
                                 val_loss = args.loss_coef_cls * val_loss_classification + args.loss_coef_rec * val_loss_reconstruction
@@ -132,7 +132,7 @@ def train(device, model, args, train_dataloader, val_dataloader):
                     # Logging 
                     print('[{}/{}] val_loss: {}, val_acc_cls: {}'.format(epoch, iteration, val_loss, val_accuracy_classificaton))
                     tb_logger.add_scalar('loss/val_cls', val_loss_running_classification / len(val_dataloader), iteration)
-                    if predictions_reconstruction:
+                    if predictions_reconstruction != None:
                         tb_logger.add_scalar('loss/val', val_loss, iteration)
                         tb_logger.add_scalar('loss/val_rec', val_loss_running_reconstruction / len(val_dataloader), iteration)
                     tb_logger.add_scalar('acc/val_cls', val_accuracy_classificaton, iteration)

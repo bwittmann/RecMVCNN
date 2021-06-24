@@ -36,7 +36,6 @@ def main(args):
 
     print('model parameters: [{:,}/{:,}]'.format(params_trainable, params_general))
     print('backbone parameters: [{:,}/{:,}]'.format(backbone_params_trainable, backbone_params_general))
-    print('backbone parameters: [{:,}/{:,}]'.format(backbone_params_trainable, backbone_params_general))
     print('classifier parameters: [{:,}/{:,}]'.format(classifier_params_trainable, classifier_params_general))
     print('decoder parameters: [{:,}/{:,}]'.format(decoder_params_trainable, decoder_params_general))
     #print('fusion module parameters: [{:,}/{:,}]'.format(fusion_module_params_trainable, fusion_module_params_general))
@@ -56,8 +55,8 @@ def main(args):
 def get_dataloader(args, env_vars, split):
     if args.dataset == 'scannet':
         dataset = dataset = ShapeNetDataset(
-            env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], 'data/ShapeNet.json', split
-            )
+            env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], split
+        )
     else:
         raise NotImplementedError
             
@@ -78,7 +77,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, help="random seed", default=42)
     parser.add_argument("--overfit", action="store_true", help="use reduced dataset for overfitting")
     parser.add_argument("--tag", type=str, required=True, help="experiment tag for tensorboard logger", default='')
-    parser.add_argument("--val_step", type=int, help="step to validate the model", default=1000)
+    parser.add_argument("--val_step", type=int, help="step to validate the model", default=5000)
     parser.add_argument("--no_validation", action="store_true", help="do not validate")
     # TODO: implement
     parser.add_argument("--use_checkpoint", type=str, help="specify the checkpoint root", default="")

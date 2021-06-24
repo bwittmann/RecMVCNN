@@ -86,10 +86,7 @@ class Backbone(nn.Module):
             resnet = models.resnet18(pretrained=True)
             self.features = nn.Sequential(
                 *list(resnet.children())[:-2],
-                nn.Conv2d(in_channels=512, out_channels=256, kernel_size=1, padding=0),
-                nn.BatchNorm2d(256),
-                nn.ReLU(),
-                nn.Conv2d(in_channels=256, out_channels=64, kernel_size=1, padding=0),
+                nn.Conv2d(in_channels=512, out_channels=64, kernel_size=1, padding=0),
                 nn.BatchNorm2d(64),
                 nn.ReLU()
             )
@@ -99,10 +96,7 @@ class Backbone(nn.Module):
             mobnet = models.mobilenet_v3_large(pretrained=True)
             self.features = nn.Sequential(
                 *list(mobnet.children())[:-2],
-                nn.Conv2d(in_channels=512, out_channels=256, kernel_size=1, padding=0),
-                nn.BatchNorm2d(256),
-                nn.ReLU(),
-                nn.Conv2d(in_channels=256, out_channels=64, kernel_size=1, padding=0),
+                nn.Conv2d(in_channels=960, out_channels=64, kernel_size=1, padding=0),
                 nn.BatchNorm2d(64),
                 nn.ReLU()
             )
@@ -112,10 +106,7 @@ class Backbone(nn.Module):
             mobnet = models.mobilenet_v3_small(pretrained=True)
             self.features = nn.Sequential(
                 *list(mobnet.children())[:-2],
-                nn.Conv2d(in_channels=576, out_channels=256, kernel_size=1, padding=0),
-                nn.BatchNorm2d(256),
-                nn.ReLU(),
-                nn.Conv2d(in_channels=256, out_channels=64, kernel_size=1, padding=0),
+                nn.Conv2d(in_channels=576, out_channels=64, kernel_size=1, padding=0),
                 nn.BatchNorm2d(64),
                 nn.ReLU()
             )
