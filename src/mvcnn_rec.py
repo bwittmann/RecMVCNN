@@ -26,14 +26,13 @@ class ReconstructionMVCNN(nn.Module):
 
         # Classifier for the classification task from 2D image features
         self.classifier = nn.Sequential(
-            nn.Linear(in_features=in_features, out_features=4096, bias=True),
+            nn.Linear(in_features=in_features, out_features=1024, bias=True),
             nn.ReLU(inplace=True),
             nn.Dropout(p=0.5, inplace=False),
-            # TODO: think about cutting this layer
-            nn.Linear(in_features=4096, out_features=4096),
+            nn.Linear(in_features=1024, out_features=1024),
             nn.ReLU(inplace=True),
             nn.Dropout(p=0.5, inplace=False),
-            nn.Linear(in_features= 4096, out_features=num_classes)
+            nn.Linear(in_features=1024, out_features=num_classes)
         )
 
     def forward(self, x):
@@ -83,32 +82,49 @@ class Backbone(nn.Module):
     def __init__(self, backbone_type):
         super().__init__()
         # Backbone for the 2D feature extraction
-        if backbone_type == 'vgg16': # num params: 14.7M, out dim: [B, 512, 4, 4]
-            vgg = models.vgg16(pretrained=True)
-            self.features = vgg.features
-            self.in_features = 512*4*4
-            self.in_channels = 1024
-        elif backbone_type == 'resnet18': # num params: 11.2M, out dim: [B, 512, 5, 5]
+        if backbone_type == 'resnet18_1x1conv': # num params: 11.2M, out dim: [B, 512, 5, 5]
             resnet = models.resnet18(pretrained=True)
-            self.features = nn.Sequential(*list(resnet.children())[:-2])
-            self.in_features = 512*5*5
-            self.in_channels = 1600
-        elif backbone_type == 'mobilenetv3l': # num params: 3.0M, out dim: [B, 960, 5, 5]
+            self.features = nn.Sequential(
+                *list(resnet.children())[:-2],
+                nn.Conv2d(in_channels=512, out_channels=256, kernel_size=1, padding=0),
+                nn.BatchNorm2d(256),
+                nn.ReLU(),
+                nn.Conv2d(in_channels=256, out_channels=64, kernel_size=1, padding=0),
+                nn.BatchNorm2d(64),
+                nn.ReLU()
+            )
+            self.in_features = 64*5*5
+            self.in_channels = 200
+        elif backbone_type == 'mobilenetv3l_1x1conv': # num params: 3.0M, out dim: [B, 960, 5, 5]
             mobnet = models.mobilenet_v3_large(pretrained=True)
-            self.features = nn.Sequential(*list(mobnet.children())[:-2])
-            # TODO: too big -> reduce if possible or use pooling? do we loose spacial infos?
-            self.in_features = 960*5*5
-            self.in_channels = 3000
-        elif backbone_type == 'mobilenetv3s': # num params: 930k, out dim; [B, 576, 5, 5]
+            self.features = nn.Sequential(
+                *list(mobnet.children())[:-2],
+                nn.Conv2d(in_channels=512, out_channels=256, kernel_size=1, padding=0),
+                nn.BatchNorm2d(256),
+                nn.ReLU(),
+                nn.Conv2d(in_channels=256, out_channels=64, kernel_size=1, padding=0),
+                nn.BatchNorm2d(64),
+                nn.ReLU()
+            )
+            self.in_features = 64*5*5
+            self.in_channels = 200
+        elif backbone_type == 'mobilenetv3s_1x1conv': # num params: 930k, out dim; [B, 576, 5, 5]
             mobnet = models.mobilenet_v3_small(pretrained=True)
-            self.features = nn.Sequential(*list(mobnet.children())[:-2])
-            self.in_features = 576*5*5
-            self.in_channels = 1800
-        elif backbone_type == 'test':
+            self.features = nn.Sequential(
+                *list(mobnet.children())[:-2],
+                nn.Conv2d(in_channels=576, out_channels=256, kernel_size=1, padding=0),
+                nn.BatchNorm2d(256),
+                nn.ReLU(),
+                nn.Conv2d(in_channels=256, out_channels=64, kernel_size=1, padding=0),
+                nn.BatchNorm2d(64),
+                nn.ReLU()
+            )
+            self.in_features = 64*5*5
+            self.in_channels = 200
+        elif backbone_type == 'resnet18_stdconv':
             resnet = models.resnet18(pretrained=True)
             self.features = nn.Sequential(
                 *list(resnet.children())[:-4],
-                # Additional layers to reduce channels and spacial dim simulataneously ([64,4,4] vs [64,7,7])
                 nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1),
                 nn.BatchNorm2d(128),
                 nn.ReLU(),
