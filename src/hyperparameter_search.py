@@ -13,13 +13,16 @@ from utils import env_vars
 from datasets import ShapeNetDataset
 
 
+def tune_func(config, device, model, checkpoint_dir, epochs=2, train_split_percentage=0.5):
+    tune.utils.wait_for_gpu()
+    hyperparameter_search(config, device, model, checkpoint_dir, epochs=2, train_split_percentage=0.5)
+
 def load_data():
     trainset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], 'train')
     testset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], 'val')
     return trainset, testset
 
-
-def hyperparameter_search(config, device, model, checkpoint_dir):
+def hyperparameter_search(config, device, model, checkpoint_dir, epochs=2, train_split_percentage=0.5):
     criterion_classification = nn.CrossEntropyLoss()
     criterion_classification.to(device)
 
@@ -31,9 +34,9 @@ def hyperparameter_search(config, device, model, checkpoint_dir):
         model.load_state_dict(model_state)
         optimizer.load_state_dict(optimizer_state)
 
-    trainset, valset = load_data()
+    trainset, _ = load_data()
 
-    test_abs = int(len(trainset) * 0.8)
+    test_abs = int(len(trainset) * train_split_percentage)
     train_subset, val_subset = random_split(trainset, [test_abs, len(trainset) - test_abs])
 
     trainloader = torch.utils.data.DataLoader(
@@ -49,11 +52,12 @@ def hyperparameter_search(config, device, model, checkpoint_dir):
         num_workers=int(config["num_workers"]))
 
     model.train()
-    for epoch in range(1, 10):
+    for epoch in range(1, epochs):
         print('Starting epoch:', epoch)
         running_loss = 0.0
         epoch_steps = 0
         for batch_idx, batch in enumerate(trainloader):
+            print('examples')
             _, renderings, class_labels, voxels = batch
             renderings, class_labels, voxels = renderings.to(device), class_labels.to(device), voxels.to(device)
 
@@ -98,10 +102,14 @@ def hyperparameter_search(config, device, model, checkpoint_dir):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch_size", type=int, help="batch size", default=1)
-    parser.add_argument("--num_workers", type=int, help="number of epochs", default=1)
+    parser.add_argument("--num_workers", type=int, help="number of workers", default=1)
+    parser.add_argument("--cpu", type=int, help="batch size", default=8)
+    parser.add_argument("--gpu", type=int, help="number of epochs", default=1)
+    parser.add_argument("--num_samples", type=int, help="number of epochs", default=1)
+    parser.add_argument("--epochs", type=int, help="number of epochs", default=2)
     args = parser.parse_args()
 
-    device = "cpu" # torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     model = MVCNN(13, 'vgg16')
     model.to(device)
@@ -122,10 +130,10 @@ if __name__ == '__main__':
     reporter = CLIReporter(metric_columns=["loss", "accuracy", "training_iteration"])
 
     result = tune.run(
-        partial(hyperparameter_search, device=device, model=model, checkpoint_dir='models/hyperparameter_search'),
-        resources_per_trial={"cpu": 4, "gpu": 0},
+        partial(tune_func, device=device, model=model, checkpoint_dir='models/hyperparameter_search', epochs=args.epochs),
+        resources_per_trial={"cpu": args.cpu, "gpu": args.gpu, },
         config=config,
-        num_samples=10,
+        num_samples=args.num_samples,
         scheduler=scheduler,
         progress_reporter=reporter)
 
