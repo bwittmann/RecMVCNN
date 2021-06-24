@@ -1,47 +1,35 @@
 import json
 import os
-
 import torch
-from torch.utils.data import Dataset, DataLoader
-
+from torch.utils.data import Dataset, DataLoader, dataset
 import cv2
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 
 from utils import read_as_3d_array, env_vars
 
 
 class ShapeNetDataset(Dataset):
 
-    def __init__(self, rendering_dir, voxel_dir, metadata_path, split='train'):
+    def __init__(self, rendering_dir, voxel_dir, split='train'):
         assert split in ['train', 'val', 'test', 'overfit']
 
         self.voxel_dir = voxel_dir
         self.rendering_dir = rendering_dir
         self.data_ids = []
 
-        with open('data/shapenet_info.json') as json_file:
+        with open(f'{env_vars["PROJECT_DIR_PATH"]}/data/shapenet_info.json') as json_file:
             self.class_name_mapping = json.load(json_file)
 
         self.classes = sorted(self.class_name_mapping.keys())
-        
-        
-        if split == 'overfit':
-            with open('data/overfit.txt') as f:
-                while True:
-                    line = f.readline()
-                    if not line:
-                        break
-                    if line[-1] == '\n':
-                        line = line[:-1]
-                    self.data_ids.append(line)
-        else:
-            with open(metadata_path) as json_file:
-                metadata = json.load(json_file)
-                for i in metadata:
-                    for j in i[split]:  
-                        self.data_ids.append(i['taxonomy_id'] + '/' + j)
+
+        with open(f'{env_vars["PROJECT_DIR_PATH"]}/data/{split}.txt') as f:
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+                if line[-1] == '\n':
+                    line = line[:-1]
+                self.data_ids.append(line)
 
     def __len__(self):
         return len(self.data_ids)
@@ -80,9 +68,7 @@ class ShapeNetDataset(Dataset):
 
 
 if __name__ == '__main__':
-
-    '''Trial/test code'''
-    dataset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], 'data/ShapeNet.json')
+    dataset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'])
     dataloader = DataLoader(dataset)
     shapenet_id, renderings, class_label, voxel = next(iter(dataloader))
     tensor_image = renderings[0, 0, :, :, :]
