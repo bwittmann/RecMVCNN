@@ -10,10 +10,11 @@ class ReconstructionMVCNN(nn.Module):
         - https://github.com/hzxie/Pix2Vox/tree/Pix2Vox-F
     """
 
-    def __init__(self, num_classes, backbone_type, no_reconstruction):
+    def __init__(self, num_classes, backbone_type, no_reconstruction, use_fusion):
         super().__init__()
         self.num_classes = num_classes
         self.no_reconstuction = no_reconstruction
+        self.use_fusion = use_fusion
 
         # Backbone to extract 2D features
         self.features = Backbone(backbone_type)
@@ -55,23 +56,23 @@ class ReconstructionMVCNN(nn.Module):
         # Get classificaton return
         cls_ret = self.classifier(max_features) # [B, num_classes]
         if self.no_reconstuction:
-            return cls_ret
+            return cls_ret, None
 
         generated_volume_list, raw_decoded_feature_list = self.decoder(feature_list)
 
-        # TODO: Fusion module to fuse lists
-
-        return cls_ret #, rec_ret
-
+        if self.use_fusion:
+            # TODO: implement
+            pass
+        else:
+            rec_ret = torch.mean(torch.stack(generated_volume_list, dim=0), dim=0)
+            return cls_ret, rec_ret
 
 
 class FusionModule(nn.Module):
-    """
-    Inspired by:
-    - https://github.com/hzxie/Pix2Vox/tree/Pix2Vox-F
-    """
+
     def __init__(self):
         super().__init__()
+        # TODO: implement
         pass
 
 
@@ -130,10 +131,7 @@ class Backbone(nn.Module):
 
 
 class Decoder(nn.Module):
-    """
-    Inspired by:
-    - https://github.com/hzxie/Pix2Vox/tree/Pix2Vox-F
-     """
+
     def __init__(self, in_channels):
         super().__init__()
         # Decoder for the reconstruction of 3D features
@@ -160,7 +158,7 @@ class Decoder(nn.Module):
         # Decoder for the reconstruction of 3D volumes from 3D features (1x1 conv)
         self.decoder_volume = nn.Sequential(
             nn.ConvTranspose3d(in_channels=8, out_channels=1, kernel_size=1, bias=False),
-            nn.Sigmoid()
+            nn.Sigmoid() # to deal with problem as a binary classification task
         )
 
     def forward(self, feature_list):

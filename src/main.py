@@ -6,7 +6,6 @@ from torch.utils.data import  DataLoader
 from dotenv import dotenv_values
 
 from train import train
-from mvcnn import MVCNN
 from mvcnn_rec import ReconstructionMVCNN
 from datasets import ShapeNetDataset
 
@@ -45,7 +44,7 @@ def get_dataloader(args, env_vars, split):
     return DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
 
 def get_model(args):
-    return ReconstructionMVCNN(args.num_classes, args.backbone, args.no_reconstruction)
+    return ReconstructionMVCNN(args.num_classes, args.backbone, args.no_reconstruction, args.use_fusion_module)
 
 
 if __name__ == "__main__":
@@ -70,9 +69,12 @@ if __name__ == "__main__":
     parser.add_argument("--lr_decay_patience", type=float, help="patience of the lr scheduler", default=10)
     parser.add_argument("--lr_decay_cooldown", type=float, help="cooldown of the lr scheduler", default=0)
     parser.add_argument("--wd", type=float, help="weight decay", default=1e-5)
+    parser.add_argument("--loss_coef_cls", type=float, help="loss coefficient of the classification task", default=0)
+    parser.add_argument("--loss_coef_rec", type=float, help="loss coefficient of the reconstruction task", default=1)
 
     # Arguments related to MVCNN model
     parser.add_argument("--no_reconstruction", action="store_true", help="no reconstruction, only classification")
+    parser.add_argument("--use_fusion_module", action="store_true", help="use fusion module for reconstruction")
     parser.add_argument("--num_classes", type=int, help="number of classes", default=13)
     parser.add_argument("--backbone", type=str, choices=['vgg16', 'resnet18', 'mobilenetv3l', 'mobilenetv3s', 'test'], 
                         help="feature extraction backbone", default='vgg16')
