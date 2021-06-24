@@ -7,7 +7,7 @@ To use this project, you must set several envrionment variables beforehand in .e
 ```
 SHAPENET_VOXEL_DATASET_PATH="/media/andrew/Storage HDD/data/ShapeNet/ShapeNetRendering"
 SHAPENET_RENDERING_DATASET_PATH="/media/andrew/Storage HDD/data/ShapeNet/ShapeNetVox32"
-MODEL_ROOT="/home/bastian/git/ML3D-MVCNN"
+PROJECT_DIR_PATH="/home/andrew/repos/ML3D-MVCNN"
 ```
 
 ## Data
