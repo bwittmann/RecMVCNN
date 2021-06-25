@@ -82,7 +82,17 @@ class Backbone(nn.Module):
     def __init__(self, backbone_type):
         super().__init__()
         # Backbone for the 2D feature extraction
-        if backbone_type == 'resnet18_1x1conv': # num params: 11.2M, out dim: [B, 512, 5, 5]
+        if backbone_type == 'vgg16_1x1conv':
+            vgg = models.vgg16(pretrained=True)
+            self.features = nn.Sequential(
+                vgg.features,
+                nn.Conv2d(in_channels=512, out_channels=64, kernel_size=1, padding=0),
+                nn.BatchNorm2d(64),
+                nn.ReLU()
+            )
+            self.in_features = 64*4*4
+            self.in_channels = 128
+        elif backbone_type == 'resnet18_1x1conv': # num params: 11.2M, out dim: [B, 512, 5, 5]
             resnet = models.resnet18(pretrained=True)
             self.features = nn.Sequential(
                 *list(resnet.children())[:-2],

@@ -93,7 +93,7 @@ if __name__ == "__main__":
     parser.add_argument("--no_reconstruction", action="store_true", help="no reconstruction, only classification")
     parser.add_argument("--use_fusion_module", action="store_true", help="use fusion module for reconstruction")
     parser.add_argument("--num_classes", type=int, help="number of classes", default=13)
-    parser.add_argument("--backbone", type=str, choices=['resnet18_1x1conv', 'resnet18_stdconv', 'mobilenetv3l_1x1conv', 'mobilenetv3s_1x1conv'], 
+    parser.add_argument("--backbone", type=str, choices=['resnet18_1x1conv', 'resnet18_stdconv', 'mobilenetv3l_1x1conv', 'mobilenetv3s_1x1conv', 'vgg16_1x1conv'], 
                         help="feature extraction backbone", default='resnet18_stdconv')
     # TODO: add num views
 
