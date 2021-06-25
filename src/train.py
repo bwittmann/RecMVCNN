@@ -149,7 +149,7 @@ def train(device, model, args, train_dataloader, val_dataloader):
                     # Reset loss and acc related values
                     val_loss_running = 0.
                     val_loss_running_classification = 0.
-                    val_loss_reconstruction = 0.
+                    val_loss_running_reconstruction = 0.
                     val_correct_classification = 0
                     val_total_classification = 0
 

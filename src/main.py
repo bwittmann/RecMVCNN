@@ -54,13 +54,11 @@ def main(args):
 
 def get_dataloader(args, env_vars, split):
     if args.dataset == 'scannet':
-        dataset = dataset = ShapeNetDataset(
-            env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], split
-        )
+        dataset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], split, num_views=args.num_views)
     else:
         raise NotImplementedError
             
-    return DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
+    return DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
 
 def get_model(args):
     return ReconstructionMVCNN(args.num_classes, args.backbone, args.no_reconstruction, args.use_fusion_module)
@@ -77,7 +75,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, help="random seed", default=42)
     parser.add_argument("--overfit", action="store_true", help="use reduced dataset for overfitting")
     parser.add_argument("--tag", type=str, required=True, help="experiment tag for tensorboard logger", default='')
-    parser.add_argument("--val_step", type=int, help="step to validate the model", default=5000)
+    parser.add_argument("--val_step", type=int, help="step to validate the model", default=300)
     parser.add_argument("--no_validation", action="store_true", help="do not validate")
     # TODO: implement
     parser.add_argument("--use_checkpoint", type=str, help="specify the checkpoint root", default="")
@@ -102,6 +100,8 @@ if __name__ == "__main__":
     # Arguments related to datasets
     # TODO: add more choices
     parser.add_argument("--dataset", type=str, choices=['scannet'], help="used dataset", default='scannet')
+    parser.add_argument("--num_views", type=int, help="number of views, between 1 and 24", default=4)
+    parser.add_argument("--num_workers", type=int, help="multi-process data loading", default=4)
     # TODO: implement
     parser.add_argument("--augment", action="store_true", help="use data augmentation")
 
