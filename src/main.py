@@ -35,13 +35,11 @@ def main(args):
 
 def get_dataloader(args, env_vars, split):
     if args.dataset == 'scannet':
-        dataset = dataset = ShapeNetDataset(
-            env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], 'data/ShapeNet.json', split
-            )
+        dataset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], split, num_views=args.num_views)
     else:
         raise NotImplementedError
             
-    return DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
+    return DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
 
 def get_model(args):
     return MVCNN(args.mvcnn_num_classes, args.mvcnn_backbone)
@@ -78,6 +76,8 @@ if __name__ == "__main__":
     # Arguments related to datasets
     # TODO: add more choices
     parser.add_argument("--dataset", type=str, choices=['scannet'], help="used dataset", default='scannet')
+    parser.add_argument("--num_views", type=int, help="number of views, between 1 and 24", default=24)
+    parser.add_argument("--num_workers", type=int, help="multi-process data loading", default=4)
     # TODO: implement
     parser.add_argument("--augment", action="store_true", help="use data augmentation")
 
