@@ -3,14 +3,13 @@ import os
 import torch 
 import numpy as np
 import torch.nn as nn
-import torch.optim as optim
 
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from dotenv import dotenv_values
 
 
-def train(device, model, args, train_dataloader, val_dataloader):
+def train(device, model, optimizer, scheduler, args, train_dataloader, val_dataloader):
     """
     Tried to keep the structure similar to the exercises.
     """
@@ -23,25 +22,21 @@ def train(device, model, args, train_dataloader, val_dataloader):
     criterion_reconstruction = nn.BCELoss()
     criterion_reconstruction.to(device)
 
-    # Init optim and scheduler
-    # TODO: use different lrs for different parts of the model
-    optimizer = optim.Adam(model.parameters(), args.lr)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, factor=args.lr_decay_factor, patience=args.lr_decay_patience, cooldown=args.lr_decay_cooldown
-        )
-
+    
     # Init loss and acc related values
     train_loss_running_classification = 0.
     train_loss_running_reconstruction = 0.
     train_loss_running = 0.
     train_correct_classification = 0
     train_total_classification = 0
+    train_reconstruction_iou = 0.
 
     val_loss_running_classification = 0.
     val_loss_running_reconstruction = 0.
     val_loss_running = 0.
     val_correct_classification = 0
     val_total_classification = 0
+    val_reconstruction_iou = 0.
 
     best_accuracy_classification = np.inf
 
@@ -50,7 +45,7 @@ def train(device, model, args, train_dataloader, val_dataloader):
         # Training loop
         for epoch in range(1, args.epoch + 1):
             print('Starting epoch:', epoch)
-            for batch_idx, batch in tqdm(enumerate(train_dataloader)):
+            for batch_idx, batch in enumerate(train_dataloader):
 
                 _, renderings, class_labels, voxels = batch
                 renderings, class_labels, voxels = renderings.to(device), class_labels.to(device), voxels.to(device)
@@ -66,6 +61,8 @@ def train(device, model, args, train_dataloader, val_dataloader):
                     train_loss_running_reconstruction += train_loss_reconstruction.item()
                     train_loss = args.loss_coef_cls * train_loss_classification + args.loss_coef_rec * train_loss_reconstruction
                     train_loss_running += train_loss.item()
+                    iou = evaluate_reconstruction(predictions_reconstruction.detach().clone(), voxels)
+                    train_reconstruction_iou += iou
                 else:
                     train_loss = train_loss_classification
                 
@@ -75,13 +72,14 @@ def train(device, model, args, train_dataloader, val_dataloader):
                 optimizer.step()
 
                 correct_pred = evaluate_classification(predictions_classification, class_labels)
+
                 train_total_classification += predictions_classification.shape[0]
                 train_correct_classification += correct_pred
 
                 iteration = (epoch - 1) * len(train_dataloader) + batch_idx
 
                 # Print and log train loss and train acc
-                if iteration % args.verbose == 0:
+                if iteration % args.verbose == 0 and iteration != 0:
                     train_accuracy_classificaton = 100 * train_correct_classification / train_total_classification
                     # Logging
                     print('[{}/{}] train_loss: {}'.format(epoch, iteration, train_loss_running / args.verbose))
@@ -89,6 +87,7 @@ def train(device, model, args, train_dataloader, val_dataloader):
                     if predictions_reconstruction != None:
                         tb_logger.add_scalar('loss/train', train_loss_running / args.verbose, iteration)
                         tb_logger.add_scalar('loss/train_rec', train_loss_running_reconstruction / args.verbose, iteration)
+                        tb_logger.add_scalar('acc/train_iou', train_reconstruction_iou / args.verbose, iteration)
                     tb_logger.add_scalar('acc/train_cls', train_accuracy_classificaton, iteration)
                     tb_logger.add_scalar('epoch', epoch, iteration)
 
@@ -97,6 +96,7 @@ def train(device, model, args, train_dataloader, val_dataloader):
                     train_loss_running_reconstruction = 0.
                     train_correct_classification = 0
                     train_total_classification = 0
+                    train_reconstruction_iou = 0.
 
                 # Validate on validation set
                 if iteration % args.val_step == 0 and not args.no_validation:
@@ -117,7 +117,9 @@ def train(device, model, args, train_dataloader, val_dataloader):
                                 val_loss_reconstruction = criterion_reconstruction(predictions_reconstruction, voxels)
                                 val_loss_running_reconstruction += val_loss_reconstruction.item()
                                 val_loss = args.loss_coef_cls * val_loss_classification + args.loss_coef_rec * val_loss_reconstruction
-                                val_loss_running += train_loss.item()
+                                val_loss_running += val_loss.item()
+                                iou = evaluate_reconstruction(predictions_reconstruction, voxels)
+                                val_reconstruction_iou += iou
                             else:
                                 val_loss = val_loss_classification
 
@@ -135,6 +137,7 @@ def train(device, model, args, train_dataloader, val_dataloader):
                     if predictions_reconstruction != None:
                         tb_logger.add_scalar('loss/val', val_loss, iteration)
                         tb_logger.add_scalar('loss/val_rec', val_loss_running_reconstruction / len(val_dataloader), iteration)
+                        tb_logger.add_scalar('acc/val_iou', val_reconstruction_iou / args.verbose, iteration)
                     tb_logger.add_scalar('acc/val_cls', val_accuracy_classificaton, iteration)
 
                     # Make a step based on the validation loss
@@ -152,6 +155,7 @@ def train(device, model, args, train_dataloader, val_dataloader):
                     val_loss_running_reconstruction = 0.
                     val_correct_classification = 0
                     val_total_classification = 0
+                    val_reconstruction_iou = 0.
 
                     model.train()
 
@@ -187,5 +191,13 @@ def evaluate_classification(predictions, labels):
     return correct_pred
 
 
-def evaluate_reconstruction():
-    pass
+def evaluate_reconstruction(reconstruction, voxel):
+    # Convert probabilities to occupancy grid
+    reconstruction[reconstruction >= 0.5] = 1
+    reconstruction[reconstruction < 0.5] = 0
+
+    # Estimate intersection and union
+    intersection = (reconstruction + voxel)
+    intersection = torch.count_nonzero(intersection == 2).item()
+    union = reconstruction.sum().item() + voxel.sum().item()
+    return (intersection/union) * 100

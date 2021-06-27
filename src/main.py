@@ -1,6 +1,7 @@
 import argparse
 import torch
 import numpy as np
+import torch.optim as optim
 
 from torch.utils.data import  DataLoader
 from dotenv import dotenv_values
@@ -20,6 +21,19 @@ def main(args):
     # Get model
     model = get_model(args)
     model.to(device)
+
+    # Get optim and scheduler
+    # TODO: use different lrs for different parts of the model
+    optimizer = optim.Adam(model.parameters(), args.lr)
+
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, factor=args.lr_decay_factor, patience=args.lr_decay_patience, cooldown=args.lr_decay_cooldown
+    )
+
+    if args.use_checkpoint:
+        checkpoint = torch.load(args.use_checkpoint)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optim_state_dict'])
 
     if args.debug:
         # Print number of model parameters
@@ -50,7 +64,7 @@ def main(args):
     val_dataloader = get_dataloader(args, env_vars, 'val')
 
     # Train
-    train(device, model, args, train_dataloader, val_dataloader)
+    train(device, model, optimizer, scheduler, args, train_dataloader, val_dataloader)
 
 
 def get_dataloader(args, env_vars, split):
@@ -62,7 +76,8 @@ def get_dataloader(args, env_vars, split):
     return DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
 
 def get_model(args):
-    return ReconstructionMVCNN(args.num_classes, args.backbone, args.no_reconstruction, args.use_fusion_module)
+    model = ReconstructionMVCNN(args.num_classes, args.backbone, args.no_reconstruction, args.use_fusion_module)
+    return model
 
 
 if __name__ == "__main__":
@@ -79,7 +94,6 @@ if __name__ == "__main__":
     parser.add_argument("--val_step", type=int, help="step to validate the model", default=300)
     parser.add_argument("--no_validation", action="store_true", help="do not validate")
     parser.add_argument("--debug", action="store_true", help="switches to debug mode")
-    # TODO: implement
     parser.add_argument("--use_checkpoint", type=str, help="specify the checkpoint root", default="")
 
     # Arguments related training
@@ -97,7 +111,6 @@ if __name__ == "__main__":
     parser.add_argument("--num_classes", type=int, help="number of classes", default=13)
     parser.add_argument("--backbone", type=str, choices=['resnet18_1x1conv', 'resnet18_stdconv', 'mobilenetv3l_1x1conv', 'mobilenetv3s_1x1conv', 'vgg16_1x1conv'], 
                         help="feature extraction backbone", default='resnet18_stdconv')
-    # TODO: add num views
 
     # Arguments related to datasets
     # TODO: add more choices
