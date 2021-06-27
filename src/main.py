@@ -21,24 +21,25 @@ def main(args):
     model = get_model(args)
     model.to(device)
 
-    # Print number of model parameters
-    params_trainable = sum(param.numel() for param in model.parameters() if param.requires_grad)
-    params_general = sum(param.numel() for param in model.parameters())
-    backbone_params_trainable = sum(param.numel() for param in model.features.parameters() if param.requires_grad)
-    backbone_params_general = sum(param.numel() for param in model.features.parameters())
-    decoder_params_trainable = sum(param.numel() for param in model.decoder.parameters() if param.requires_grad)
-    decoder_params_general = sum(param.numel() for param in model.decoder.parameters())
-    classifier_params_trainable = sum(param.numel() for param in model.classifier.parameters() if param.requires_grad)
-    classifier_params_general = sum(param.numel() for param in model.classifier.parameters())
-    # TODO: implement
-    #fusion_module_params_trainable = sum(param.numel() for param in model.fusion_module.parameters() if param.requires_grad)
-    #fusion_module_params_general = sum(param.numel() for param in model.fusion_module.parameters())
+    if args.debug:
+        # Print number of model parameters
+        params_trainable = sum(param.numel() for param in model.parameters() if param.requires_grad)
+        params_general = sum(param.numel() for param in model.parameters())
+        backbone_params_trainable = sum(param.numel() for param in model.features.parameters() if param.requires_grad)
+        backbone_params_general = sum(param.numel() for param in model.features.parameters())
+        decoder_params_trainable = sum(param.numel() for param in model.decoder.parameters() if param.requires_grad)
+        decoder_params_general = sum(param.numel() for param in model.decoder.parameters())
+        classifier_params_trainable = sum(param.numel() for param in model.classifier.parameters() if param.requires_grad)
+        classifier_params_general = sum(param.numel() for param in model.classifier.parameters())
+        # TODO: implement
+        #fusion_module_params_trainable = sum(param.numel() for param in model.fusion_module.parameters() if param.requires_grad)
+        #fusion_module_params_general = sum(param.numel() for param in model.fusion_module.parameters())
 
-    print('model parameters: [{:,}/{:,}]'.format(params_trainable, params_general))
-    print('backbone parameters: [{:,}/{:,}]'.format(backbone_params_trainable, backbone_params_general))
-    print('classifier parameters: [{:,}/{:,}]'.format(classifier_params_trainable, classifier_params_general))
-    print('decoder parameters: [{:,}/{:,}]'.format(decoder_params_trainable, decoder_params_general))
-    #print('fusion module parameters: [{:,}/{:,}]'.format(fusion_module_params_trainable, fusion_module_params_general))
+        print('model parameters: [{:,}/{:,}]'.format(params_trainable, params_general))
+        print('backbone parameters: [{:,}/{:,}]'.format(backbone_params_trainable, backbone_params_general))
+        print('classifier parameters: [{:,}/{:,}]'.format(classifier_params_trainable, classifier_params_general))
+        print('decoder parameters: [{:,}/{:,}]'.format(decoder_params_trainable, decoder_params_general))
+        #print('fusion module parameters: [{:,}/{:,}]'.format(fusion_module_params_trainable, fusion_module_params_general))
 
     # Get data loaders
     if args.overfit:
@@ -77,6 +78,7 @@ if __name__ == "__main__":
     parser.add_argument("--tag", type=str, required=True, help="experiment tag for tensorboard logger", default='')
     parser.add_argument("--val_step", type=int, help="step to validate the model", default=300)
     parser.add_argument("--no_validation", action="store_true", help="do not validate")
+    parser.add_argument("--debug", action="store_true", help="switches to debug mode")
     # TODO: implement
     parser.add_argument("--use_checkpoint", type=str, help="specify the checkpoint root", default="")
 
@@ -86,8 +88,8 @@ if __name__ == "__main__":
     parser.add_argument("--lr_decay_patience", type=float, help="patience of the lr scheduler", default=10)
     parser.add_argument("--lr_decay_cooldown", type=float, help="cooldown of the lr scheduler", default=0)
     parser.add_argument("--wd", type=float, help="weight decay", default=1e-5)
-    parser.add_argument("--loss_coef_cls", type=float, help="loss coefficient of the classification task", default=0.5)
-    parser.add_argument("--loss_coef_rec", type=float, help="loss coefficient of the reconstruction task", default=0.5)
+    parser.add_argument("--loss_coef_cls", type=float, help="loss coefficient of the classification task", default=0)
+    parser.add_argument("--loss_coef_rec", type=float, help="loss coefficient of the reconstruction task", default=1)
 
     # Arguments related to MVCNN model
     parser.add_argument("--no_reconstruction", action="store_true", help="no reconstruction, only classification")
