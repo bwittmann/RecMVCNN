@@ -1,12 +1,13 @@
 import argparse
 import torch
 import numpy as np
+import torch.optim as optim
 
 from torch.utils.data import  DataLoader
 from dotenv import dotenv_values
 
 from train import train
-from mvcnn import MVCNN
+from mvcnn_rec import ReconstructionMVCNN
 from datasets import ShapeNetDataset
 
 
@@ -21,6 +22,39 @@ def main(args):
     model = get_model(args)
     model.to(device)
 
+    # Get optim and scheduler
+    # TODO: use different lrs for different parts of the model
+    optimizer = optim.Adam(model.parameters(), args.lr)
+
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, factor=args.lr_decay_factor, patience=args.lr_decay_patience, cooldown=args.lr_decay_cooldown
+    )
+
+    if args.use_checkpoint:
+        checkpoint = torch.load(args.use_checkpoint)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optim_state_dict'])
+
+    if args.debug:
+        # Print number of model parameters
+        params_trainable = sum(param.numel() for param in model.parameters() if param.requires_grad)
+        params_general = sum(param.numel() for param in model.parameters())
+        backbone_params_trainable = sum(param.numel() for param in model.features.parameters() if param.requires_grad)
+        backbone_params_general = sum(param.numel() for param in model.features.parameters())
+        decoder_params_trainable = sum(param.numel() for param in model.decoder.parameters() if param.requires_grad)
+        decoder_params_general = sum(param.numel() for param in model.decoder.parameters())
+        classifier_params_trainable = sum(param.numel() for param in model.classifier.parameters() if param.requires_grad)
+        classifier_params_general = sum(param.numel() for param in model.classifier.parameters())
+        # TODO: implement
+        #fusion_module_params_trainable = sum(param.numel() for param in model.fusion_module.parameters() if param.requires_grad)
+        #fusion_module_params_general = sum(param.numel() for param in model.fusion_module.parameters())
+
+        print('model parameters: [{:,}/{:,}]'.format(params_trainable, params_general))
+        print('backbone parameters: [{:,}/{:,}]'.format(backbone_params_trainable, backbone_params_general))
+        print('classifier parameters: [{:,}/{:,}]'.format(classifier_params_trainable, classifier_params_general))
+        print('decoder parameters: [{:,}/{:,}]'.format(decoder_params_trainable, decoder_params_general))
+        #print('fusion module parameters: [{:,}/{:,}]'.format(fusion_module_params_trainable, fusion_module_params_general))
+
     # Get data loaders
     if args.overfit:
         train_dataloader = get_dataloader(args, env_vars, 'overfit')
@@ -30,7 +64,7 @@ def main(args):
     val_dataloader = get_dataloader(args, env_vars, 'val')
 
     # Train
-    train(device, model, args, train_dataloader, val_dataloader)
+    train(device, model, optimizer, scheduler, args, train_dataloader, val_dataloader)
 
 
 def get_dataloader(args, env_vars, split):
@@ -42,7 +76,8 @@ def get_dataloader(args, env_vars, split):
     return DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
 
 def get_model(args):
-    return MVCNN(args.mvcnn_num_classes, args.mvcnn_backbone)
+    model = ReconstructionMVCNN(args.num_classes, args.backbone, args.no_reconstruction, args.use_fusion_module, args.cat_cls_res)
+    return model
 
 
 if __name__ == "__main__":
@@ -56,9 +91,9 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, help="random seed", default=42)
     parser.add_argument("--overfit", action="store_true", help="use reduced dataset for overfitting")
     parser.add_argument("--tag", type=str, required=True, help="experiment tag for tensorboard logger", default='')
-    parser.add_argument("--val_step", type=int, help="step to validate the model", default=1000)
+    parser.add_argument("--val_step", type=int, help="step to validate the model", default=300)
     parser.add_argument("--no_validation", action="store_true", help="do not validate")
-    # TODO: implement
+    parser.add_argument("--debug", action="store_true", help="switches to debug mode")
     parser.add_argument("--use_checkpoint", type=str, help="specify the checkpoint root", default="")
 
     # Arguments related training
@@ -67,16 +102,22 @@ if __name__ == "__main__":
     parser.add_argument("--lr_decay_patience", type=float, help="patience of the lr scheduler", default=10)
     parser.add_argument("--lr_decay_cooldown", type=float, help="cooldown of the lr scheduler", default=0)
     parser.add_argument("--wd", type=float, help="weight decay", default=1e-5)
+    parser.add_argument("--loss_coef_cls", type=float, help="loss coefficient of the classification task", default=0.3)
+    parser.add_argument("--loss_coef_rec", type=float, help="loss coefficient of the reconstruction task", default=0.7)
 
     # Arguments related to MVCNN model
-    parser.add_argument("--mvcnn_num_classes", type=int, help="number of classes", default=13)
-    # TODO: add more choices
-    parser.add_argument("--mvcnn_backbone", type=str, choices=['vgg16'], help="feature extraction backbone", default='vgg16')
+    parser.add_argument("--no_reconstruction", action="store_true", help="no reconstruction, only classification")
+    parser.add_argument("--use_fusion_module", action="store_true", help="use fusion module for reconstruction")
+    parser.add_argument("--num_classes", type=int, help="number of classes", default=13)
+    parser.add_argument("--backbone", type=str, choices=['resnet18_1x1conv', 'resnet18_stdconv', 'mobilenetv3l_1x1conv', 'mobilenetv3s_1x1conv', 'vgg16_1x1conv'], 
+                        help="feature extraction backbone", default='resnet18_stdconv')
+    # TODO: implement
+    parser.add_argument("--cat_cls_res", action="store_true", help="concatenate classification results to reconstruction feature map")
 
     # Arguments related to datasets
     # TODO: add more choices
     parser.add_argument("--dataset", type=str, choices=['scannet'], help="used dataset", default='scannet')
-    parser.add_argument("--num_views", type=int, help="number of views, between 1 and 24", default=24)
+    parser.add_argument("--num_views", type=int, help="number of views, between 1 and 24", default=4)
     parser.add_argument("--num_workers", type=int, help="multi-process data loading", default=4)
     # TODO: implement
     parser.add_argument("--augment", action="store_true", help="use data augmentation")
