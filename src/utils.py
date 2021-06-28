@@ -2,6 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from dotenv import dotenv_values
+import open3d as o3d
+
+
+env_vars = dotenv_values('.env')
 
 
 '''from ML3D team - Exercise 2'''
@@ -16,7 +20,6 @@ def read_header(fp):
     scale = [float(i) for i in fp.readline().strip().split(b' ')[1:]][0]
     line = fp.readline()
     return dims, translate, scale
-
 
 
 def read_as_3d_array(fp, fix_coords=True):
@@ -54,4 +57,33 @@ def read_as_3d_array(fp, fix_coords=True):
     return data
 
 
-env_vars = dotenv_values('.env')
+
+def visualize_voxel_grid(voxel_grid, color=[1, 0.706, 0]): 
+    voxels = []
+
+    # TODO: Likely a more efficient way to do this using NumPy API
+    for i in range(voxel_grid.shape[0]):
+        for j in range(voxel_grid.shape[1]):
+            for k in range(voxel_grid.shape[0]):
+                if voxel_grid[i,j,k] == 1:
+                    voxel = [i, j, k]
+                    voxels.append(voxel)
+                    
+
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(np.array(voxels, dtype=int))
+    pcd.paint_uniform_color(color)
+
+    o3d_voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd, 1)
+    o3d.visualization.draw_geometries([o3d_voxel_grid])
+
+
+if __name__ == "__main__":
+    voxel_grid = None
+
+    # 1c26ecb4cd01759dc1006ed55bc1a3fc
+    # 1a9b552befd6306cc8f2d5fe7449af61
+    with open(env_vars["SHAPENET_RENDERING_DATASET_PATH"] + "/02691156/1c26ecb4cd01759dc1006ed55bc1a3fc/model.binvox", "rb") as fptr:
+            voxel_grid = read_as_3d_array(fptr).astype(np.float32)
+
+    visualize_voxel_grid(voxel_grid)
