@@ -76,7 +76,7 @@ def get_dataloader(args, env_vars, split):
     return DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
 
 def get_model(args):
-    model = ReconstructionMVCNN(args.num_classes, args.backbone, args.no_reconstruction, args.use_fusion_module)
+    model = ReconstructionMVCNN(args.num_classes, args.backbone, args.no_reconstruction, args.use_fusion_module, args.cat_cls_res)
     return model
 
 
@@ -102,8 +102,8 @@ if __name__ == "__main__":
     parser.add_argument("--lr_decay_patience", type=float, help="patience of the lr scheduler", default=10)
     parser.add_argument("--lr_decay_cooldown", type=float, help="cooldown of the lr scheduler", default=0)
     parser.add_argument("--wd", type=float, help="weight decay", default=1e-5)
-    parser.add_argument("--loss_coef_cls", type=float, help="loss coefficient of the classification task", default=0)
-    parser.add_argument("--loss_coef_rec", type=float, help="loss coefficient of the reconstruction task", default=1)
+    parser.add_argument("--loss_coef_cls", type=float, help="loss coefficient of the classification task", default=0.3)
+    parser.add_argument("--loss_coef_rec", type=float, help="loss coefficient of the reconstruction task", default=0.7)
 
     # Arguments related to MVCNN model
     parser.add_argument("--no_reconstruction", action="store_true", help="no reconstruction, only classification")
@@ -111,6 +111,8 @@ if __name__ == "__main__":
     parser.add_argument("--num_classes", type=int, help="number of classes", default=13)
     parser.add_argument("--backbone", type=str, choices=['resnet18_1x1conv', 'resnet18_stdconv', 'mobilenetv3l_1x1conv', 'mobilenetv3s_1x1conv', 'vgg16_1x1conv'], 
                         help="feature extraction backbone", default='resnet18_stdconv')
+    # TODO: implement
+    parser.add_argument("--cat_cls_res", action="store_true", help="concatenate classification results to reconstruction feature map")
 
     # Arguments related to datasets
     # TODO: add more choices

@@ -10,11 +10,12 @@ class ReconstructionMVCNN(nn.Module):
         - https://github.com/hzxie/Pix2Vox/tree/Pix2Vox-F
     """
 
-    def __init__(self, num_classes, backbone_type, no_reconstruction, use_fusion):
+    def __init__(self, num_classes, backbone_type, no_reconstruction, use_fusion, cat_cls_res):
         super().__init__()
         self.num_classes = num_classes
         self.no_reconstuction = no_reconstruction
         self.use_fusion = use_fusion
+        self.cat_cls_res = cat_cls_res
 
         # Backbone to extract 2D features
         self.features = Backbone(backbone_type)
@@ -33,6 +34,13 @@ class ReconstructionMVCNN(nn.Module):
             nn.ReLU(inplace=True),
             nn.Dropout(p=0.5, inplace=False),
             nn.Linear(in_features=1024, out_features=num_classes)
+        )
+
+        # Conv layer for incorporating classification results in reconstruction feature map
+        self.fuse_cls_res = nn.Sequential(
+            nn.ConvTranspose2d(in_channels=64+self.num_classes, out_channels=64, kernel_size=1, padding=0),
+            nn.BatchNorm2d(64),
+            nn.ReLU()
         )
 
     def forward(self, x):
@@ -56,6 +64,15 @@ class ReconstructionMVCNN(nn.Module):
         cls_ret = self.classifier(max_features) # [B, num_classes]
         if self.no_reconstuction:
             return cls_ret, None
+
+        # Concatenate classification results to feature list to improve reconstruction
+        if self.cat_cls_res:
+            #pred_labels = torch.argmax(cls_ret, dim=1)[:, None, None, None]
+            pred_labels = cls_ret[:, :, None, None]
+            pred_labels = pred_labels.expand(-1, self.num_classes, 5, 5)
+
+            for idx, feature in enumerate(feature_list):
+                feature_list[idx] = self.fuse_cls_res(torch.cat((feature, pred_labels), dim=1))
 
         generated_volume_list, raw_decoded_feature_list = self.decoder(feature_list)
 
