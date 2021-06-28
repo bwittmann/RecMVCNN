@@ -57,8 +57,12 @@ def read_as_3d_array(fp, fix_coords=True):
     return data
 
 
-
 def visualize_voxel_grid(voxel_grid, color=[1, 0.706, 0]): 
+    """
+    voxel_grid: np.array
+    visualizes voxel grid
+    """
+
     voxels = []
 
     # TODO: Likely a more efficient way to do this using NumPy API
@@ -68,7 +72,7 @@ def visualize_voxel_grid(voxel_grid, color=[1, 0.706, 0]):
                 if voxel_grid[i,j,k] == 1:
                     voxel = [i, j, k]
                     voxels.append(voxel)
-                    
+
 
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(np.array(voxels, dtype=int))
