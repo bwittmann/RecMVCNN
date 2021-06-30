@@ -69,7 +69,7 @@ class ReconstructionMVCNN(nn.Module):
         if self.cat_cls_res:
             #pred_labels = torch.argmax(cls_ret, dim=1)[:, None, None, None]
             pred_labels = cls_ret[:, :, None, None]
-            pred_labels = pred_labels.expand(-1, self.num_classes, 5, 5)
+            pred_labels = pred_labels.expand(-1, -1, 5, 5)
 
             for idx, feature in enumerate(feature_list):
                 feature_list[idx] = self.fuse_cls_res(torch.cat((feature, pred_labels), dim=1))
