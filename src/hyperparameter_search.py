@@ -14,8 +14,10 @@ from datasets import ShapeNetDataset
 
 
 def load_data(num_views):
-    trainset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], 'val', num_views=num_views)
-    testset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], 'val', num_views=num_views)
+    trainset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], 'val', 
+                                num_views=num_views, project_path=env_vars['PROJECT_DIR_PATH'])
+    testset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], 'val', 
+                                num_views=num_views, project_path=env_vars['PROJECT_DIR_PATH'])
     return trainset, testset
 
 def hyperparameter_search(config, device, model, checkpoint_dir, epochs=2, train_split_percentage=0.5, num_views=3, limit_size=16):
@@ -106,7 +108,7 @@ if __name__ == '__main__':
     parser.add_argument("--num_workers", type=int, help="number of workers", default=1)
     parser.add_argument("--cpu", type=int, help="batch size", default=8)
     parser.add_argument("--gpu", type=int, help="number of epochs", default=1)
-    parser.add_argument("--num_samples", type=int, help="number of epochs", default=2)
+    parser.add_argument("--num_samples", type=int, help="number of epochs", default=1)
     parser.add_argument("--epochs", type=int, help="number of epochs", default=2)
     parser.add_argument("--limit_size", type=int, help="number of epochs", default=150)
     args = parser.parse_args()
