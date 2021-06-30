@@ -57,8 +57,6 @@ def test(device, model, args, dataloader, num_running_visualizations):
                 loss = loss_classification
                 loss_running_total += loss_classification.item()
 
-            print(predictions_reconstruction.shape)
-            print(len(shapenet_ids))
             for recon, id in zip(predictions_reconstruction, shapenet_ids):
                 save_voxel_grid(visualizations_path + f'/{id.replace("/", "_", 1)}.ply', recon.cpu().numpy())
 
