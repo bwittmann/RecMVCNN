@@ -77,9 +77,7 @@ def test(device, model, args, dataloader, num_running_visualizations):
 
     print("\n----------")
     print("Evaluation results:")
-    print(f"val_reconstruction_iou: {reconstruction_iou}")
-    print(f"val_loss_classification: {loss_classification}")
-    print(f"val_loss_classification: {correct_classification}")
+    print(f"Classifcation accuracy: {correct_classification / total_classification}")
     print("----------\n")
 
     df_cm = pd.DataFrame(confusion_matrix.numpy(), index = [dataloader.dataset.class_name_mapping[i] for i in dataloader.dataset.classes],
