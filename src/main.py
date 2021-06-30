@@ -7,6 +7,7 @@ from torch.utils.data import  DataLoader
 from dotenv import dotenv_values
 
 from train import train
+from test import test
 from mvcnn_rec import ReconstructionMVCNN
 from datasets import ShapeNetDataset
 
@@ -62,9 +63,16 @@ def main(args):
         train_dataloader = get_dataloader(args, env_vars, 'train')
 
     val_dataloader = get_dataloader(args, env_vars, 'val')
+    test_dataloader = get_dataloader(args, env_vars, 'overfit')
 
+    # TODO: Add test data split
     # Train
-    train(device, model, optimizer, scheduler, args, train_dataloader, val_dataloader)
+    if args.test:
+        test(device, model, args, test_dataloader, args.num_running_visualizations)
+    elif args.val:
+        test(device, model, args, val_dataloader, args.num_running_visualizations)
+    else:
+        train(device, model, optimizer, scheduler, args, train_dataloader, val_dataloader)
 
 
 def get_dataloader(args, env_vars, split):
@@ -120,6 +128,10 @@ if __name__ == "__main__":
     parser.add_argument("--num_workers", type=int, help="multi-process data loading", default=4)
     # TODO: implement
     parser.add_argument("--augment", action="store_true", help="use data augmentation")
+    parser.add_argument("--test", action="store_true", help="test model on test split")
+    parser.add_argument("--val", action="store_true", help="test model on val")
+    parser.add_argument("--num_running_visualizations", type=int, help="visualizations for test script", default=3)
+
 
     args = parser.parse_args()
 

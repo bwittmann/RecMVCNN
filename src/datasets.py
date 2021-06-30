@@ -10,8 +10,7 @@ from utils import read_as_3d_array, env_vars
 
 
 class ShapeNetDataset(Dataset):
-
-    def __init__(self, rendering_dir, voxel_dir, split='train', num_views=24):
+    def __init__(self, voxel_dir, rendering_dir, split='train', num_views=24):
         assert split in ['train', 'val', 'test', 'overfit']
         assert 1 <= num_views <= 24, "num_views must be between 1 and 24"
 

@@ -37,11 +37,11 @@ class ReconstructionMVCNN(nn.Module):
         )
 
         # Conv layer for incorporating classification results in reconstruction feature map
-        self.fuse_cls_res = nn.Sequential(
-            nn.ConvTranspose2d(in_channels=64+self.num_classes, out_channels=64, kernel_size=1, padding=0),
-            nn.BatchNorm2d(64),
-            nn.ReLU()
-        )
+        # self.fuse_cls_res = nn.Sequential(
+        #     nn.ConvTranspose2d(in_channels=64+self.num_classes, out_channels=64, kernel_size=1, padding=0),
+        #     nn.BatchNorm2d(64),
+        #     nn.ReLU()
+        # )
 
     def forward(self, x):
         batch_size = x.shape[0]
