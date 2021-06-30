@@ -65,6 +65,7 @@ def train(device, model, optimizer, scheduler, args, train_dataloader, val_datal
                     train_reconstruction_iou += iou
                 else:
                     train_loss = train_loss_classification
+                    train_loss_running += train_loss.item()
                 
                 # Backprob and make a step
                 optimizer.zero_grad()
@@ -122,6 +123,7 @@ def train(device, model, optimizer, scheduler, args, train_dataloader, val_datal
                                 val_reconstruction_iou += iou
                             else:
                                 val_loss = val_loss_classification
+                                val_loss_running += val_loss_classification.item()
 
                             correct_pred = evaluate_classification(predictions_classification, class_labels)
                             val_total_classification += predictions_classification.shape[0]
