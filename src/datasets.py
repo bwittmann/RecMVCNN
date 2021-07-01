@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader, dataset
 import cv2
 import numpy as np
-import random
+from random import randrange
 
 from utils import read_as_3d_array, env_vars
 
@@ -50,8 +50,7 @@ class ShapeNetDataset(Dataset):
                 png_files.append(line.strip())
 
         renderings = None
-        selected_png_files = random.sample(png_files, k=self.num_views)
-
+        selected_png_files = [png_files[i] for i in (np.linspace(0, 23, self.num_views, dtype=np.int_) + randrange(24)) % 24]
         # Load images into 4D tensors
         for i in selected_png_files:
             image = cv2.imread(renderings_path + '/' + i)
