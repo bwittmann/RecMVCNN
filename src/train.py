@@ -42,11 +42,11 @@ def train(device, model, optimizer, scheduler, args, train_dataloader, val_datal
 
     model.train()
     try:
-        # Training loop
+        # Main loop
         for epoch in range(1, args.epoch + 1):
             print('Starting epoch:', epoch)
-            for batch_idx, batch in enumerate(train_dataloader):
-
+            # Train on train set
+            for batch in tqdm(train_dataloader):
                 _, renderings, class_labels, voxels = batch
                 renderings, class_labels, voxels = renderings.to(device), class_labels.to(device), voxels.to(device)
 
@@ -77,95 +77,91 @@ def train(device, model, optimizer, scheduler, args, train_dataloader, val_datal
                 train_total_classification += predictions_classification.shape[0]
                 train_correct_classification += correct_pred
 
-                iteration = (epoch - 1) * len(train_dataloader) + batch_idx
+            # Print and log train loss and train acc
+            train_accuracy_classificaton = 100 * train_correct_classification / train_total_classification
 
-                # Print and log train loss and train acc
-                if iteration % args.verbose == 0 and iteration != 0:
-                    train_accuracy_classificaton = 100 * train_correct_classification / train_total_classification
-                    # Logging
-                    print('[{}/{}] train_loss: {}'.format(epoch, iteration, train_loss_running / args.verbose))
-                    tb_logger.add_scalar('loss/train_cls', train_loss_running_classification / args.verbose, iteration)
-                    if predictions_reconstruction != None:
-                        tb_logger.add_scalar('loss/train', train_loss_running / args.verbose, iteration)
-                        tb_logger.add_scalar('loss/train_rec', train_loss_running_reconstruction / args.verbose, iteration)
-                        tb_logger.add_scalar('acc/train_iou', train_reconstruction_iou / args.verbose, iteration)
-                    tb_logger.add_scalar('acc/train_cls', train_accuracy_classificaton, iteration)
-                    tb_logger.add_scalar('epoch', epoch, iteration)
+            print('[epoch:{}] train_loss: {}'.format(epoch, train_loss_running / len(train_dataloader)))
+            tb_logger.add_scalar('loss/train_cls', train_loss_running_classification / len(train_dataloader), epoch)
+            if predictions_reconstruction != None:
+                tb_logger.add_scalar('loss/train', train_loss_running / len(train_dataloader), epoch)
+                tb_logger.add_scalar('loss/train_rec', train_loss_running_reconstruction / len(train_dataloader), epoch)
+                tb_logger.add_scalar('acc/train_iou', train_reconstruction_iou / len(train_dataloader), epoch)
+            tb_logger.add_scalar('acc/train_cls', train_accuracy_classificaton, epoch)
 
-                    train_loss_running = 0.
-                    train_loss_running_classification = 0.
-                    train_loss_running_reconstruction = 0.
-                    train_correct_classification = 0
-                    train_total_classification = 0
-                    train_reconstruction_iou = 0.
+            train_loss_running = 0.
+            train_loss_running_classification = 0.
+            train_loss_running_reconstruction = 0.
+            train_correct_classification = 0
+            train_total_classification = 0
+            train_reconstruction_iou = 0.
 
-                # Validate on validation set
-                if iteration % args.val_step == 0 and not args.no_validation:
-                    print('Starting validation')
-                    model.eval()
+            # Validate on val set
+            if not args.no_validation:
+                print('Starting validation')
+                model.eval()
 
-                    for batch in tqdm(val_dataloader):
-                        _, renderings, class_labels, voxels = batch
-                        renderings, class_labels, voxels = renderings.to(device), class_labels.to(device), voxels.to(device)
+                for batch in tqdm(val_dataloader):
+                    _, renderings, class_labels, voxels = batch
+                    renderings, class_labels, voxels = renderings.to(device), class_labels.to(device), voxels.to(device)
 
-                        with torch.no_grad():
-                            predictions_classification, predictions_reconstruction = model(renderings.float())
+                    with torch.no_grad():
+                        predictions_classification, predictions_reconstruction = model(renderings.float())
 
-                            val_loss_classification = criterion_classification(predictions_classification, class_labels)
-                            val_loss_running_classification += val_loss_classification
+                        val_loss_classification = criterion_classification(predictions_classification, class_labels)
+                        val_loss_running_classification += val_loss_classification
 
-                            if predictions_reconstruction !=None:
-                                val_loss_reconstruction = criterion_reconstruction(predictions_reconstruction, voxels)
-                                val_loss_running_reconstruction += val_loss_reconstruction.item()
-                                val_loss = args.loss_coef_cls * val_loss_classification + args.loss_coef_rec * val_loss_reconstruction
-                                val_loss_running += val_loss.item()
-                                iou = evaluate_reconstruction(predictions_reconstruction, voxels)
-                                val_reconstruction_iou += iou
-                            else:
-                                val_loss = val_loss_classification
-                                val_loss_running += val_loss_classification.item()
+                        if predictions_reconstruction != None:
+                            val_loss_reconstruction = criterion_reconstruction(predictions_reconstruction, voxels)
+                            val_loss_running_reconstruction += val_loss_reconstruction.item()
+                            val_loss = args.loss_coef_cls * val_loss_classification + args.loss_coef_rec * val_loss_reconstruction
+                            val_loss_running += val_loss.item()
+                            iou = evaluate_reconstruction(predictions_reconstruction, voxels)
+                            val_reconstruction_iou += iou
+                        else:
+                            val_loss = val_loss_classification
+                            val_loss_running += val_loss_classification.item()
 
-                            correct_pred = evaluate_classification(predictions_classification, class_labels)
-                            val_total_classification += predictions_classification.shape[0]
-                            val_correct_classification += correct_pred 
+                        correct_pred = evaluate_classification(predictions_classification, class_labels)
+                        val_total_classification += predictions_classification.shape[0]
+                        val_correct_classification += correct_pred 
 
-                    # Estimate val loss and acc
-                    val_accuracy_classificaton = 100 * val_correct_classification / val_total_classification
-                    val_loss = val_loss_running / len(val_dataloader)
+                # Estimate val loss and acc
+                val_accuracy_classificaton = 100 * val_correct_classification / val_total_classification
+                val_loss = val_loss_running / len(val_dataloader)
 
-                    # Logging 
-                    print('[{}/{}] val_loss: {}, val_acc_cls: {}'.format(epoch, iteration, val_loss, val_accuracy_classificaton))
-                    tb_logger.add_scalar('loss/val_cls', val_loss_running_classification / len(val_dataloader), iteration)
-                    if predictions_reconstruction != None:
-                        tb_logger.add_scalar('loss/val', val_loss, iteration)
-                        tb_logger.add_scalar('loss/val_rec', val_loss_running_reconstruction / len(val_dataloader), iteration)
-                        tb_logger.add_scalar('acc/val_iou', val_reconstruction_iou / args.verbose, iteration)
-                    tb_logger.add_scalar('acc/val_cls', val_accuracy_classificaton, iteration)
+                # Logging 
+                print('[epoch:{}] val_loss: {}, val_acc_cls: {}'.format(epoch, val_loss, val_accuracy_classificaton))
+                tb_logger.add_scalar('loss/val_cls', val_loss_running_classification / len(val_dataloader), epoch)
+                if predictions_reconstruction != None:
+                    tb_logger.add_scalar('loss/val', val_loss, epoch)
+                    tb_logger.add_scalar('loss/val_rec', val_loss_running_reconstruction / len(val_dataloader), epoch)
+                    tb_logger.add_scalar('acc/val_iou', val_reconstruction_iou / len(val_dataloader), epoch)
+                tb_logger.add_scalar('acc/val_cls', val_accuracy_classificaton, epoch)
 
-                    # Make a step based on the validation loss
-                    scheduler.step(val_loss)
+                # Make a step based on the validation loss
+                scheduler.step(val_loss)
 
-                    # Save model is accuracy is better that all time best
-                    if val_accuracy_classificaton >= best_accuracy_classification:
-                        best_accuracy_classification = val_accuracy_classificaton
-                        print('best classification accuracy -> save model')
-                        save_model(model)
+                # Save model is accuracy is better that all time best
+                if val_accuracy_classificaton >= best_accuracy_classification:
+                    best_accuracy_classification = val_accuracy_classificaton
+                    print('best classification accuracy -> save model')
+                    save_model(model)
 
-                    # Reset loss and acc related values
-                    val_loss_running = 0.
-                    val_loss_running_classification = 0.
-                    val_loss_running_reconstruction = 0.
-                    val_correct_classification = 0
-                    val_total_classification = 0
-                    val_reconstruction_iou = 0.
+                # Reset loss and acc related values
+                val_loss_running = 0.
+                val_loss_running_classification = 0.
+                val_loss_running_reconstruction = 0.
+                val_correct_classification = 0
+                val_total_classification = 0
+                val_reconstruction_iou = 0.
 
-                    model.train()
+                model.train()
 
-        # Save checkpoint
+        # Save checkpoint after epochs ended
         print('training finished -> saving checkpoint')
         save_model(model, epoch, optimizer, args, True)
     except KeyboardInterrupt:
-        # Save checkpoint
+        # Save checkpoint if interrupted
         print('keyboard interrupt -> saving checkpoint')
         save_model(model, epoch, optimizer, args, True)
 
