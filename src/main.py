@@ -63,7 +63,7 @@ def main(args):
         train_dataloader = get_dataloader(args, env_vars, 'train')
 
     val_dataloader = get_dataloader(args, env_vars, 'val')
-    test_dataloader = get_dataloader(args, env_vars, 'overfit')
+    test_dataloader = get_dataloader(args, env_vars, 'test')
 
     # TODO: Add test data split
     # Train
