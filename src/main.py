@@ -87,11 +87,9 @@ if __name__ == "__main__":
     # Standard arguments
     parser.add_argument("--batch_size", type=int, help="batch size", default=14)
     parser.add_argument("--epoch", type=int, help="number of epochs", default=500)
-    parser.add_argument("--verbose", type=int, help="iterations of showing verbose", default=10)
     parser.add_argument("--seed", type=int, help="random seed", default=42)
     parser.add_argument("--overfit", action="store_true", help="use reduced dataset for overfitting")
     parser.add_argument("--tag", type=str, required=True, help="experiment tag for tensorboard logger", default='')
-    parser.add_argument("--val_step", type=int, help="step to validate the model", default=300)
     parser.add_argument("--no_validation", action="store_true", help="do not validate")
     parser.add_argument("--debug", action="store_true", help="switches to debug mode")
     parser.add_argument("--use_checkpoint", type=str, help="specify the checkpoint root", default="")
@@ -110,7 +108,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_fusion_module", action="store_true", help="use fusion module for reconstruction")
     parser.add_argument("--num_classes", type=int, help="number of classes", default=13)
     parser.add_argument("--backbone", type=str, choices=['resnet18_1x1conv', 'resnet18_stdconv', 'mobilenetv3l_1x1conv', 'mobilenetv3s_1x1conv', 'vgg16_1x1conv'], 
-                        help="feature extraction backbone", default='resnet18_stdconv')
+                        help="feature extraction backbone", default='resnet18_1x1conv')
     parser.add_argument("--cat_cls_res", action="store_true", help="concatenate classification results to reconstruction feature map")
 
     # Arguments related to datasets
