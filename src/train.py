@@ -88,6 +88,9 @@ def train(device, model, optimizer, scheduler, args, train_dataloader, val_datal
                 tb_logger.add_scalar('acc/train_iou', train_reconstruction_iou / len(train_dataloader), epoch)
             tb_logger.add_scalar('acc/train_cls', train_accuracy_classificaton, epoch)
 
+            for param_group in optimizer.param_groups:
+                tb_logger.add_scalar('lr', param_group['lr'], epoch)
+
             train_loss_running = 0.
             train_loss_running_classification = 0.
             train_loss_running_reconstruction = 0.
