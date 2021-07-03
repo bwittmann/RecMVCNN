@@ -57,11 +57,31 @@ def read_as_3d_array(fp, fix_coords=True):
     return data
 
 
-def visualize_voxel_grid(voxel_grid, color=[1, 0.706, 0]): 
+def visualize_voxel_grid(voxel_grid): 
     """
     voxel_grid: np.array
     visualizes voxel grid
     """
+    voxels = []
+
+    # TODO: Likely a more efficient way to do this using NumPy API
+    for i in range(voxel_grid.shape[0]):
+        for j in range(voxel_grid.shape[1]):
+            for k in range(voxel_grid.shape[0]):
+                if voxel_grid[i,j,k] >= 0.5:
+                    voxel = [i, j, k]
+                    voxels.append(voxel)
+
+    pcd = o3d.geometry.PointCloud()
+    points = o3d.utility.Vector3dVector(np.array(voxels, dtype=int))
+    pcd.points = points
+    pcd.colors = o3d.utility.Vector3dVector(np.random.uniform(0, 1, size=(len(points), 3)))
+
+    o3d_voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd, 1)
+    o3d.visualization.draw_geometries([o3d_voxel_grid])
+
+
+def save_voxel_grid(path, voxel_grid):
 
     voxels = []
 
@@ -69,17 +89,17 @@ def visualize_voxel_grid(voxel_grid, color=[1, 0.706, 0]):
     for i in range(voxel_grid.shape[0]):
         for j in range(voxel_grid.shape[1]):
             for k in range(voxel_grid.shape[0]):
-                if voxel_grid[i,j,k] == 1:
+                if voxel_grid[i,j,k] >= 0.5:
                     voxel = [i, j, k]
                     voxels.append(voxel)
 
 
     pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(np.array(voxels, dtype=int))
-    pcd.paint_uniform_color(color)
-
+    points = o3d.utility.Vector3dVector(np.array(voxels, dtype=int))
+    pcd.points = points
+    pcd.colors = o3d.utility.Vector3dVector(np.random.uniform(0, 1, size=(len(points), 3)))
     o3d_voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd, 1)
-    o3d.visualization.draw_geometries([o3d_voxel_grid])
+    o3d.io.write_voxel_grid(path, o3d_voxel_grid)
 
 
 if __name__ == "__main__":
@@ -87,7 +107,7 @@ if __name__ == "__main__":
 
     # 1c26ecb4cd01759dc1006ed55bc1a3fc
     # 1a9b552befd6306cc8f2d5fe7449af61
-    with open(env_vars["SHAPENET_RENDERING_DATASET_PATH"] + "/02691156/1c26ecb4cd01759dc1006ed55bc1a3fc/model.binvox", "rb") as fptr:
+    with open(env_vars["SHAPENET_VOXEL_DATASET_PATH"] + "/02691156/1c26ecb4cd01759dc1006ed55bc1a3fc/model.binvox", "rb") as fptr:
             voxel_grid = read_as_3d_array(fptr).astype(np.float32)
 
     visualize_voxel_grid(voxel_grid)
