@@ -24,7 +24,7 @@ def main(args):
 
     # Get optim and scheduler
     # TODO: use different lrs for different parts of the model
-    optimizer = optim.Adam(model.parameters(), args.lr)
+    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
 
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, factor=args.lr_decay_factor, patience=args.lr_decay_patience, cooldown=args.lr_decay_cooldown
@@ -76,7 +76,7 @@ def get_dataloader(args, env_vars, split):
     return DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
 
 def get_model(args):
-    model = ReconstructionMVCNN(args.num_classes, args.backbone, args.no_reconstruction, args.use_fusion_module, args.cat_cls_res)
+    model = ReconstructionMVCNN(args.num_classes, args.backbone, args.no_reconstruction, args.use_fusion_module, args.cat_cls_res, args.dropout_prob)
     return model
 
 
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr_decay_factor", type=float, help="decay factor of the lr scheduler", default=0.5)
     parser.add_argument("--lr_decay_patience", type=float, help="patience of the lr scheduler", default=10)
     parser.add_argument("--lr_decay_cooldown", type=float, help="cooldown of the lr scheduler", default=0)
-    parser.add_argument("--wd", type=float, help="weight decay", default=1e-5)
+    parser.add_argument("--wd", type=float, help="weight decay", default=0)
     parser.add_argument("--loss_coef_cls", type=float, help="loss coefficient of the classification task", default=0.5)
     parser.add_argument("--loss_coef_rec", type=float, help="loss coefficient of the reconstruction task", default=0.5)
 
@@ -110,6 +110,7 @@ if __name__ == "__main__":
     parser.add_argument("--backbone", type=str, choices=['resnet18_1x1conv', 'resnet18_stdconv', 'mobilenetv3l_1x1conv', 'mobilenetv3s_1x1conv', 'vgg16_1x1conv'], 
                         help="feature extraction backbone", default='resnet18_1x1conv')
     parser.add_argument("--cat_cls_res", action="store_true", help="concatenate classification results to reconstruction feature map")
+    parser.add_argument("--dropout_prob", type=float, help="dropout probability in linear layers of classification head", default=0.5)
 
     # Arguments related to datasets
     # TODO: add more choices

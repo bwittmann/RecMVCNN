@@ -10,7 +10,7 @@ class ReconstructionMVCNN(nn.Module):
         - https://github.com/hzxie/Pix2Vox/tree/Pix2Vox-F
     """
 
-    def __init__(self, num_classes, backbone_type, no_reconstruction, use_fusion, cat_cls_res):
+    def __init__(self, num_classes, backbone_type, no_reconstruction, use_fusion, cat_cls_res, dropout_prob):
         super().__init__()
         self.num_classes = num_classes
         self.no_reconstuction = no_reconstruction
@@ -29,10 +29,10 @@ class ReconstructionMVCNN(nn.Module):
         self.classifier = nn.Sequential(
             nn.Linear(in_features=in_features, out_features=1024, bias=True),
             nn.ReLU(inplace=True),
-            nn.Dropout(p=0.5, inplace=False),
+            nn.Dropout(p=dropout_prob, inplace=False),
             nn.Linear(in_features=1024, out_features=1024),
             nn.ReLU(inplace=True),
-            nn.Dropout(p=0.5, inplace=False),
+            nn.Dropout(p=dropout_prob, inplace=False),
             nn.Linear(in_features=1024, out_features=num_classes)
         )
 
