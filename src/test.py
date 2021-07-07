@@ -87,5 +87,5 @@ def test(device, model, args, dataloader, num_running_visualizations):
     df_cm = pd.DataFrame(confusion_matrix.numpy(), index = [dataloader.dataset.class_name_mapping[i] for i in dataloader.dataset.classes],
                   columns = [dataloader.dataset.class_name_mapping[i] for i in dataloader.dataset.classes])
     plt.figure(figsize = (model.num_classes, model.num_classes))
-    sn.heatmap(df_cm, annot=True)
+    sn.heatmap(df_cm, annot=True, fmt="d")
     plt.show()
