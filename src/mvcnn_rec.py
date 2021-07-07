@@ -28,20 +28,22 @@ class ReconstructionMVCNN(nn.Module):
         # Classifier for the classification task from 2D image features
         self.classifier = nn.Sequential(
             nn.Linear(in_features=in_features, out_features=1024, bias=True),
+            #nn.BatchNorm1d(1024),
             nn.ReLU(inplace=True),
             nn.Dropout(p=dropout_prob, inplace=False),
             nn.Linear(in_features=1024, out_features=1024),
+            #nn.BatchNorm1d(1024),
             nn.ReLU(inplace=True),
             nn.Dropout(p=dropout_prob, inplace=False),
             nn.Linear(in_features=1024, out_features=num_classes)
         )
 
         # Conv layer for incorporating classification results in reconstruction feature map
-        # self.fuse_cls_res = nn.Sequential(
-        #     nn.ConvTranspose2d(in_channels=64+self.num_classes, out_channels=64, kernel_size=1, padding=0),
-        #     nn.BatchNorm2d(64),
-        #     nn.ReLU()
-        # )
+        self.fuse_cls_res = nn.Sequential(
+            nn.ConvTranspose2d(in_channels=64+self.num_classes, out_channels=64, kernel_size=1, padding=0),
+            nn.BatchNorm2d(64),
+            nn.ReLU()
+        )
 
     def forward(self, x):
         batch_size = x.shape[0]
