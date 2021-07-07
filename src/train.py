@@ -38,7 +38,7 @@ def train(device, model, optimizer, scheduler, args, train_dataloader, val_datal
     val_total_classification = 0
     val_reconstruction_iou = 0.
 
-    best_accuracy_classification = np.inf
+    best_accuracy_classification = -np.inf
 
     model.train()
     try:
@@ -148,7 +148,7 @@ def train(device, model, optimizer, scheduler, args, train_dataloader, val_datal
                 if val_accuracy_classificaton >= best_accuracy_classification:
                     best_accuracy_classification = val_accuracy_classificaton
                     print('best classification accuracy -> save model')
-                    save_model(model)
+                    save_model(model, epoch, optimizer, args, True)
 
                 # Reset loss and acc related values
                 val_loss_running = 0.
@@ -162,28 +162,31 @@ def train(device, model, optimizer, scheduler, args, train_dataloader, val_datal
 
         # Save checkpoint after epochs ended
         print('training finished -> saving checkpoint')
-        save_model(model, epoch, optimizer, args, True)
+        save_model(model, epoch, optimizer, args)
     except KeyboardInterrupt:
         # Save checkpoint if interrupted
         print('keyboard interrupt -> saving checkpoint')
-        save_model(model, epoch, optimizer, args, True)
+        save_model(model, epoch, optimizer, args)
 
 
-def save_model(model, epoch=None, optimizer=None, args=None, checkpoint=False):
+def save_model(model, epoch=None, optimizer=None, args=None, best=False):
     # TODO: test, not sure if scheduler also part of checkpoint
     checkpoint_path = os.path.join(dotenv_values('.env')['PROJECT_DIR_PATH'], 'outputs/{}'.format(args.tag))
     if not os.path.exists(checkpoint_path):
         os.makedirs(checkpoint_path)
 
-    if checkpoint:
-        save_dict = {
-            'epoch': epoch, 
-            'model_state_dict' : model.state_dict(),
-            'optim_state_dict' : optimizer.state_dict() 
-        }
-        torch.save(save_dict, os.path.join(checkpoint_path, 'checkpoint.tar'))
+    if best:
+        name = 'model_best.tar'
     else:
-        torch.save(model.state_dict(), os.path.join(checkpoint_path, 'model_best.pth'))
+        name = 'model_last.tar'
+
+    save_dict = {
+        'epoch': epoch, 
+        'model_state_dict' : model.state_dict(),
+        'optim_state_dict' : optimizer.state_dict() 
+    }
+    torch.save(save_dict, os.path.join(checkpoint_path, name))
+
 
 
 def evaluate_classification(predictions, labels):
