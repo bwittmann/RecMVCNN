@@ -7,11 +7,12 @@ import cv2
 import numpy as np
 from random import randrange
 
-from utils import read_as_3d_array, dotenv_values
+from utils import read_as_3d_array, env_vars, dotenv_values
 from dotenv import load_dotenv
 
 class ShapeNetDataset(Dataset):
-    def __init__(self, voxel_dir, rendering_dir, split='train', num_views=24., project_path=None):
+
+    def __init__(self, voxel_dir, rendering_dir, split='train', num_views=24):
         assert split in ['train', 'val', 'test', 'overfit']
         assert 1 <= num_views <= 24, "num_views must be between 1 and 24"
 
@@ -19,33 +20,20 @@ class ShapeNetDataset(Dataset):
         self.rendering_dir = rendering_dir
         self.data_ids = []
         self.num_views = num_views
-        
-        # Needed for raytune
-        if project_path:
-            metadata_path = project_path + "/data"
-        else:
-            metadata_path = "data"
 
-        with open(f'{metadata_path}/shapenet_info.json') as json_file:
+        with open(f'{env_vars["PROJECT_DIR_PATH"]}/data/shapenet_info.json') as json_file:
             self.class_name_mapping = json.load(json_file)
 
         self.classes = sorted(self.class_name_mapping.keys())
 
-        if split == 'overfit':
-            with open(f'{metadata_path}/overfit.txt') as f:
-                while True:
-                    line = f.readline()
-                    if not line:
-                        break
-                    if line[-1] == '\n':
-                        line = line[:-1]
-                    self.data_ids.append(line)
-        else:
-            with open(f'{metadata_path}/ShapeNet.json') as json_file:
-                metadata = json.load(json_file)
-                for i in metadata:
-                    for j in i[split]:  
-                        self.data_ids.append(i['taxonomy_id'] + '/' + j)
+        with open(f'{env_vars["PROJECT_DIR_PATH"]}/data/{split}.txt') as f:
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+                if line[-1] == '\n':
+                    line = line[:-1]
+                self.data_ids.append(line)
 
     def __len__(self):
         return len(self.data_ids)
@@ -85,18 +73,21 @@ class ShapeNetDataset(Dataset):
 
 
 if __name__ == '__main__':
-    dataset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], 'test')
+    print(env_vars['SHAPENET_VOXEL_DATASET_PATH'])
+    dataset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], 'train')
     dataloader = DataLoader(dataset)
     shapenet_id, renderings, class_label, voxel = next(iter(dataloader))
     tensor_image = renderings[0, 0, :, :, :]
 
-    cv2.imshow('Test image',tensor_image.permute(2,1,0).numpy())
-    cv2.waitKey(0)
+    print(len(dataset))
 
-    # j = 0
-    # try:
-    #     for i in dataloader:
-    #         j += 1
-    # except Exception as e:
-    #     print(e)
-    #     print("index:", j)
+    # cv2.imshow('Test image',tensor_image.permute(2,1,0).numpy())
+    # cv2.waitKey(0)
+
+    j = 0
+    try:
+        for i in dataloader:
+            j += 1
+    except Exception as e:
+        print(e)
+        print("index:", j)
