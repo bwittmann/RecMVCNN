@@ -47,6 +47,9 @@ def test(device, model, args, dataloader, num_running_visualizations):
             loss_running_classification += loss_classification
 
             if predictions_reconstruction is not None:
+                if len(list(predictions_reconstruction.size())) == 3:
+                    predictions_reconstruction = torch.unsqueeze(predictions_reconstruction, 0)
+
                 loss_reconstruction = criterion_reconstruction(predictions_reconstruction, voxels)
                 loss_running_reconstruction += loss_reconstruction.item()
                 loss = args.loss_coef_cls * loss_classification + args.loss_coef_rec * loss_reconstruction
@@ -84,5 +87,5 @@ def test(device, model, args, dataloader, num_running_visualizations):
     df_cm = pd.DataFrame(confusion_matrix.numpy(), index = [dataloader.dataset.class_name_mapping[i] for i in dataloader.dataset.classes],
                   columns = [dataloader.dataset.class_name_mapping[i] for i in dataloader.dataset.classes])
     plt.figure(figsize = (model.num_classes, model.num_classes))
-    sn.heatmap(df_cm, annot=True)
+    sn.heatmap(df_cm, annot=True, fmt="d")
     plt.show()
