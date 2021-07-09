@@ -271,16 +271,16 @@ if __name__ == '__main__':
                 m = o3d.geometry.TriangleMesh.create_sphere(radius=.03, resolution=resolution).translate(j)
                 points.append(m)
 
-            # k = 0
-            # for j in points:
-            #     renderer.scene.add_geometry(f'mesh_{k}', j, mat)
-            #     k += 1
+            k = 0
+            for j in points:
+                renderer.scene.add_geometry(f'mesh_{k}', j, mat)
+                k += 1
 
-            # img = renderer.render_to_image()
-            # if i < 10:
-            #     o3d.io.write_image(dir_path + f'/0{i}.png', img)
-            # else:
-            #     o3d.io.write_image(dir_path + f'/{i}.png', img)
+            img = renderer.render_to_image()
+            if i < 10:
+                o3d.io.write_image(dir_path + f'/0{i}.png', img)
+            else:
+                o3d.io.write_image(dir_path + f'/{i}.png', img)
 
             renderer.scene.clear_geometry()
 
