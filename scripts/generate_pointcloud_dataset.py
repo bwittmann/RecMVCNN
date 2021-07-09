@@ -229,7 +229,7 @@ if __name__ == '__main__':
 
     k = 0
     ps, lb, n, f = d.__getitem__(args.index)
-    renderer = o3d.visualization.rendering.OffscreenRenderer(127, 127)
+    renderer = o3d.visualization.rendering.OffscreenRenderer(800, 800)
     mat = rendering.Material()
     mat.shader = 'defaultLit'
     # renderer.scene.set_lighting(o3d.visualization.rendering.Open3DScene.LightingProfile.HARD_SHADOWS, (0.577, -0.577, -0.577))
@@ -272,7 +272,7 @@ if __name__ == '__main__':
 
         points = []
         for j in pc:
-            m = o3d.geometry.TriangleMesh.create_sphere(radius=.03, resolution=resolution).translate(j)
+            m = o3d.geometry.TriangleMesh.create_sphere(radius=.04, resolution=resolution).translate(j)
             points.append(m)
 
         k = 0
