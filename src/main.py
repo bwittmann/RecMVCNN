@@ -23,10 +23,28 @@ def main(args):
     model = get_model(args)
     model.to(device)
 
-    # Get optim and scheduler
-    # TODO: use different lrs for different parts of the model
-    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
+    # Get optim
+    non_rec_params = []
+    rec_params = []
 
+    for param_name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue
+        if "decoder" in param_name:
+            rec_params.append(param)
+        else:
+            non_rec_params.append(param)
+
+    param_dicts = [
+        {"params" : non_rec_params},
+        {"params" : rec_params,
+         "lr" : args.lr_rec_head,
+         "weight_decay" : args.wd_rec_head}
+    ]
+
+    optimizer = optim.Adam(param_dicts, lr=args.lr, weight_decay=args.wd)
+
+    # Get scheduler
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, factor=args.lr_decay_factor, patience=args.lr_decay_patience, cooldown=args.lr_decay_cooldown
     )
@@ -104,10 +122,12 @@ if __name__ == "__main__":
 
     # Arguments related training
     parser.add_argument("--lr", type=float, help="learning rate", default=5e-5)
+    parser.add_argument("--lr_rec_head", type=float, help="learning rate", default=1e-3)
     parser.add_argument("--lr_decay_factor", type=float, help="decay factor of the lr scheduler", default=0.5)
     parser.add_argument("--lr_decay_patience", type=float, help="patience of the lr scheduler", default=10)
     parser.add_argument("--lr_decay_cooldown", type=float, help="cooldown of the lr scheduler", default=0)
     parser.add_argument("--wd", type=float, help="weight decay", default=0)
+    parser.add_argument("--wd_rec_head", type=float, help="weight decay", default=0)
     parser.add_argument("--loss_coef_cls", type=float, help="loss coefficient of the classification task", default=0.5)
     parser.add_argument("--loss_coef_rec", type=float, help="loss coefficient of the reconstruction task", default=0.5)
 
@@ -126,7 +146,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_views", type=int, help="number of views, between 1 and 24", default=4)
     parser.add_argument("--num_workers", type=int, help="multi-process data loading", default=4)
     # TODO: implement
-    parser.add_argument("--augment", action="store_true", help="use data augmentation")
+    #parser.add_argument("--augment", action="store_true", help="use data augmentation")
     parser.add_argument("--test", action="store_true", help="test model on test split")
     parser.add_argument("--val", action="store_true", help="test model on val")
     parser.add_argument("--num_running_visualizations", type=int, help="visualizations for test script", default=3)

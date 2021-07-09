@@ -28,13 +28,13 @@ class ReconstructionMVCNN(nn.Module):
         # Classifier for the classification task from 2D image features
         self.classifier = nn.Sequential(
             nn.Linear(in_features=in_features, out_features=1024, bias=True),
-            #nn.BatchNorm1d(1024),
+            nn.BatchNorm1d(1024),
             nn.ReLU(inplace=True),
-            nn.Dropout(p=dropout_prob, inplace=False),
+            #nn.Dropout(p=dropout_prob, inplace=False),
             nn.Linear(in_features=1024, out_features=1024),
-            #nn.BatchNorm1d(1024),
+            nn.BatchNorm1d(1024),
             nn.ReLU(inplace=True),
-            nn.Dropout(p=dropout_prob, inplace=False),
+            #nn.Dropout(p=dropout_prob, inplace=False),
             nn.Linear(in_features=1024, out_features=num_classes)
         )
 
