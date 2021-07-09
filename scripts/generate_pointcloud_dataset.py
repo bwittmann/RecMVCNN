@@ -209,8 +209,9 @@ if __name__ == '__main__':
     parser.add_argument("--num_views", type=int, help="batch size", default=24)
     parser.add_argument("--resolution", type=int, help="number of epochs", default=20)
     parser.add_argument("--num_points", type=int, help="number of epochs", default=1024)
-    
     parser.add_argument("--use_checkpoint", type=str, help="specify the checkpoint root", default="")
+    parser.add_argument("--index", type=int, help="batch size", required=True)
+    
     args = parser.parse_args()
 
     num_views = args.num_views
@@ -226,71 +227,63 @@ if __name__ == '__main__':
     if not os.path.exists(env_vars["SHAPENET_DATASET_PATH"] + "/ShapeNetPC"):
         os.mkdir(env_vars["SHAPENET_DATASET_PATH"] + "/ShapeNetPC")
 
-    renderer = o3d.visualization.rendering.OffscreenRenderer(800, 800)
+    k = 0
+    ps, lb, n, f = d.__getitem__(args.index)
+    renderer = o3d.visualization.rendering.OffscreenRenderer(127, 127)
     mat = rendering.Material()
     mat.shader = 'defaultLit'
     # renderer.scene.set_lighting(o3d.visualization.rendering.Open3DScene.LightingProfile.HARD_SHADOWS, (0.577, -0.577, -0.577))
     renderer.scene.camera.look_at([0, 0.25, -.5], [0, 1, 1], [0,1,0])
-    
-    k = 0
-    for ps, lb, n, f in d:
-        label, id = f[:-4].split('/')
-        dir_path = env_vars["SHAPENET_DATASET_PATH"] + f'/ShapeNetPC/{label}/{id}/rendering'
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
 
+    label, id = f[:-4].split('/')
+    dir_path = env_vars["SHAPENET_DATASET_PATH"] + f'/ShapeNetPC/{label}/{id}/rendering'
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
+    k += 1
+    ps = ps.numpy()
+    ps = ps # scale down pointcloud
+    for i in range(num_views):
         k += 1
-        ps = ps.numpy()
-        ps = ps # scale down pointcloud
-        for i in range(num_views):
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(ps)
+        
+        # Add rotation
+        alpha = 0
+        beta = 2 * np.pi * (i / num_views)  
+        eps = 0
+
+        r_x = np.array([[1, 0, 0],
+                    [0, np.cos(alpha), -np.sin(alpha)],
+                    [0, np.sin(alpha), np.cos(alpha)]])
+
+        r_y = np.array([[np.cos(beta), 0, np.sin(beta)],
+                    [0, 1, 0],
+                    [-np.sin(beta), 0, np.cos(beta)]])
+
+        r_z = np.array([[np.cos(eps), -np.sin(eps), 0],
+                    [np.sin(eps), np.cos(eps), 0],
+                    [0, 0, 1]])
+
+
+        pcd = pcd.rotate(r_z @ r_y @ r_x)
+        pcd = pcd.translate(np.array([0,0,-1]))
+        pc = np.asarray(pcd.points)
+
+        points = []
+        for j in pc:
+            m = o3d.geometry.TriangleMesh.create_sphere(radius=.03, resolution=resolution).translate(j)
+            points.append(m)
+
+        k = 0
+        for j in points:
+            renderer.scene.add_geometry(f'mesh_{k}', j, mat)
             k += 1
-            pcd = o3d.geometry.PointCloud()
-            pcd.points = o3d.utility.Vector3dVector(ps)
-            
-            # Add rotation
-            alpha = 0
-            beta = 2 * np.pi * (i / num_views)  
-            eps = 0
 
-            r_x = np.array([[1, 0, 0],
-                        [0, np.cos(alpha), -np.sin(alpha)],
-                        [0, np.sin(alpha), np.cos(alpha)]])
+        img = renderer.render_to_image()
+        if i < 10:
+            o3d.io.write_image(dir_path + f'/0{i}.png', img)
+        else:
+            o3d.io.write_image(dir_path + f'/{i}.png', img)
 
-
-            r_y = np.array([[np.cos(beta), 0, np.sin(beta)],
-                        [0, 1, 0],
-                        [-np.sin(beta), 0, np.cos(beta)]])
-
-            r_z = np.array([[np.cos(eps), -np.sin(eps), 0],
-                        [np.sin(eps), np.cos(eps), 0],
-                        [0, 0, 1]])
-
-
-            pcd = pcd.rotate(r_z @ r_y @ r_x)
-            pcd = pcd.translate(np.array([0,0,-1]))
-            pc = np.asarray(pcd.points)
-
-            points = []
-            for j in pc:
-                m = o3d.geometry.TriangleMesh.create_sphere(radius=.03, resolution=resolution).translate(j)
-                points.append(m)
-
-            k = 0
-            for j in points:
-                renderer.scene.add_geometry(f'mesh_{k}', j, mat)
-                k += 1
-
-            img = renderer.render_to_image()
-            if i < 10:
-                o3d.io.write_image(dir_path + f'/0{i}.png', img)
-            else:
-                o3d.io.write_image(dir_path + f'/{i}.png', img)
-
-            renderer.scene.clear_geometry()
-
-    # o3d.visualization.draw_geometries(points)
-    # pcd = o3d.geometry.PointCloud()
-    # pcd.points = o3d.utility.Vector3dVector(ps)
-    # custom_draw_geometry_with_rotation(pcd)
-    # custom_draw_geometry_with_rotation(points)
-    # print(ps.size(), ps.type(), lb.size(), lb.type(), n, f) 
+        renderer.scene.clear_geometry()
