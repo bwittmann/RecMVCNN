@@ -207,11 +207,15 @@ def custom_draw_geometry_with_rotation(pcd):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--num_views", type=int, help="batch size", default=24)
-    parser.add_argument("--epoch", type=int, help="number of epochs", default=20)
+    parser.add_argument("--resolution", type=int, help="number of epochs", default=20)
+    parser.add_argument("--num_points", type=int, help="number of epochs", default=1024)
+    
     parser.add_argument("--use_checkpoint", type=str, help="specify the checkpoint root", default="")
+    args = parser.parse_args()
 
-    num_views = 24
-    resolution = 20
+    num_views = args.num_views
+    resolution = args.resolution
+    num_points = args.num_points
 
     env_vars = dotenv_values('.env')
     dataset_name = 'shapenetcorev2'
