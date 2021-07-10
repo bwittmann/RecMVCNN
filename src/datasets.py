@@ -8,8 +8,8 @@ import numpy as np
 from random import randrange
 from utils import read_as_3d_array, env_vars
 
-class ShapeNetDataset(Dataset):
 
+class ShapeNetDataset(Dataset):
     def __init__(self, voxel_dir, rendering_dir, split='train', num_views=24, pointcloud_renderings=False):
         assert split in ['train', 'val', 'test', 'overfit']
         assert 1 <= num_views <= 24, "num_views must be between 1 and 24"
