@@ -206,12 +206,13 @@ def custom_draw_geometry_with_rotation(pcd):
  
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_views", type=int, help="batch size", default=24)
+    parser.add_argument("--num_views", type=int, help="batch size", default=3)
     parser.add_argument("--resolution", type=int, help="number of epochs", default=20)
-    parser.add_argument("--num_points", type=int, help="number of epochs", default=1024)
+    parser.add_argument("--num_points", type=int, help="number of epochs", default=2048)
     parser.add_argument("--use_checkpoint", type=str, help="specify the checkpoint root", default="")
     parser.add_argument("--index", type=int, help="batch size", required=True)
-    
+    parser.add_argument("--split", help="batch size", required=True)
+
     args = parser.parse_args()
 
     num_views = args.num_views
@@ -220,8 +221,8 @@ if __name__ == '__main__':
 
     env_vars = dotenv_values('.env')
     dataset_name = 'shapenetcorev2'
-    split = 'train'
-    d = Dataset(root=env_vars["SHAPENET_DATASET_PATH"], dataset_name=dataset_name, num_points=1024, split=split)
+    split = args.split
+    d = Dataset(root=env_vars["SHAPENET_DATASET_PATH"], dataset_name=dataset_name, num_points=args.num_points, split=split)
     print("datasize:", d.__len__())
 
     if not os.path.exists(env_vars["SHAPENET_DATASET_PATH"] + "/ShapeNetPC"):
@@ -272,7 +273,7 @@ if __name__ == '__main__':
 
         points = []
         for j in pc:
-            m = o3d.geometry.TriangleMesh.create_sphere(radius=.04, resolution=resolution).translate(j)
+            m = o3d.geometry.TriangleMesh.create_sphere(radius=.035, resolution=resolution).translate(j)
             points.append(m)
 
         k = 0
