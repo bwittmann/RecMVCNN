@@ -230,7 +230,7 @@ if __name__ == '__main__':
 
     k = 0
     ps, lb, n, f = d.__getitem__(args.index)
-    renderer = o3d.visualization.rendering.OffscreenRenderer(800, 800)
+    renderer = o3d.visualization.rendering.OffscreenRenderer(137, 137)
     mat = rendering.Material()
     mat.shader = 'defaultLit'
     # renderer.scene.set_lighting(o3d.visualization.rendering.Open3DScene.LightingProfile.HARD_SHADOWS, (0.577, -0.577, -0.577))
