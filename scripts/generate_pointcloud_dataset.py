@@ -1,13 +1,3 @@
-
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-@Author: An Tao
-@Contact: ta19@mails.tsinghua.edu.cn
-@File: dataset.py
-@Time: 2020/1/2 10:26 AM
-"""
-
 import os
 import torch
 import json
@@ -33,6 +23,7 @@ shapenetpart_seg_num = [4, 2, 2, 4, 4, 3, 3, 2, 4, 2, 6, 2, 3, 3, 3, 3]
 shapenetpart_seg_start_index = [0, 4, 6, 8, 12, 16, 19, 22, 24, 28, 30, 36, 38, 41, 44, 47]
 
 
+# An Tao's code from the poincloud repos
 def translate_pointcloud(pointcloud):
     xyz1 = np.random.uniform(low=2./3., high=3./2., size=[3])
     xyz2 = np.random.uniform(low=-0.2, high=0.2, size=[3])
@@ -192,7 +183,7 @@ class Dataset(data.Dataset):
 
     def __len__(self):
         return self.data.shape[0]
-
+###
 
 def custom_draw_geometry_with_rotation(pcd):
     def change_background_to_black(vis):
