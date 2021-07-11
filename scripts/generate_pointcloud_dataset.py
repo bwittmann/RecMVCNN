@@ -199,7 +199,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--num_views", type=int, help="batch size", default=3)
     parser.add_argument("--resolution", type=int, help="number of epochs", default=20)
-    parser.add_argument("--num_points", type=int, help="number of epochs", default=2048)
+    parser.add_argument("--num_points", type=int, help="number of epochs", default=1024)
     parser.add_argument("--use_checkpoint", type=str, help="specify the checkpoint root", default="")
     parser.add_argument("--index", type=int, help="batch size", required=True)
     parser.add_argument("--split", help="batch size", required=True)
@@ -245,20 +245,20 @@ if __name__ == '__main__':
         beta = 2 * np.pi * (i / num_views)  
         eps = 0
 
-        r_x = np.array([[1, 0, 0],
-                    [0, np.cos(alpha), -np.sin(alpha)],
-                    [0, np.sin(alpha), np.cos(alpha)]])
+        # r_x = np.array([[1, 0, 0],
+        #             [0, np.cos(alpha), -np.sin(alpha)],
+        #             [0, np.sin(alpha), np.cos(alpha)]])
 
         r_y = np.array([[np.cos(beta), 0, np.sin(beta)],
                     [0, 1, 0],
                     [-np.sin(beta), 0, np.cos(beta)]])
 
-        r_z = np.array([[np.cos(eps), -np.sin(eps), 0],
-                    [np.sin(eps), np.cos(eps), 0],
-                    [0, 0, 1]])
+        # r_z = np.array([[np.cos(eps), -np.sin(eps), 0],
+        #             [np.sin(eps), np.cos(eps), 0],
+        #             [0, 0, 1]])
 
 
-        pcd = pcd.rotate(r_z @ r_y @ r_x)
+        pcd = pcd.rotate(r_y)
         pcd = pcd.translate(np.array([0,0,-1]))
         pc = np.asarray(pcd.points)
 
