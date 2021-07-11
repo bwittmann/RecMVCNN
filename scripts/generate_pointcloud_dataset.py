@@ -206,6 +206,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Error)
+
     num_views = args.num_views
     resolution = args.resolution
     num_points = args.num_points
@@ -214,7 +216,12 @@ if __name__ == '__main__':
     dataset_name = 'shapenetcorev2'
     split = args.split
     d = Dataset(root=env_vars["SHAPENET_DATASET_PATH"], dataset_name=dataset_name, num_points=args.num_points, split=split)
-    print("datasize:", d.__len__())
+    
+    if (args.index % 100) == 0:
+        print(f'Processing renderings {args.index} / {d.__len__()}'
+
+
+
 
     if not os.path.exists(env_vars["SHAPENET_DATASET_PATH"] + "/ShapeNetPC"):
         os.mkdir(env_vars["SHAPENET_DATASET_PATH"] + "/ShapeNetPC")
