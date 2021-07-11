@@ -217,14 +217,14 @@ if __name__ == '__main__':
     split = args.split
     d = Dataset(root=env_vars["SHAPENET_DATASET_PATH"], dataset_name=dataset_name, num_points=args.num_points, split=split)
     
-    if (args.index % 100) == 0:
-        print(f'Processing renderings {args.index} / {d.__len__()}'
-
-
-
 
     if not os.path.exists(env_vars["SHAPENET_DATASET_PATH"] + "/ShapeNetPC"):
         os.mkdir(env_vars["SHAPENET_DATASET_PATH"] + "/ShapeNetPC")
+
+
+    if (args.index % 100) == 0:
+        print(f'Processing renderings {args.index} / {d.__len__()}')
+
 
     k = 0
     ps, lb, n, f = d.__getitem__(args.index)
