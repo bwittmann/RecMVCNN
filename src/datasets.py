@@ -25,7 +25,9 @@ class ShapeNetDataset(Dataset):
 
         self.classes = sorted(self.class_name_mapping.keys())
 
-        with open(f'{env_vars["PROJECT_DIR_PATH"]}/data/{split}.txt') as f:
+        split_path = f'{env_vars["PROJECT_DIR_PATH"]}/data/{split}.txt'
+        split_path = split_path if not pointcloud_renderings else f'{env_vars["PROJECT_DIR_PATH"]}/data/shapenet_pc/{split}.txt'
+        with open(split_path) as f:
             while True:
                 line = f.readline()
                 if not line:
@@ -42,13 +44,6 @@ class ShapeNetDataset(Dataset):
         renderings_path = os.path.join(self.rendering_dir, shapenet_id, 'rendering')
         png_files = []
 
-        with open(renderings_path + '/renderings.txt') as f:
-            while True:
-                line = f.readline()
-                if not line:
-                    break
-                png_files.append(line.strip())
-
         renderings = None
 
         if self.pointcloud_renderings == True:
@@ -61,6 +56,12 @@ class ShapeNetDataset(Dataset):
                 else:
                     renderings = torch.cat((renderings, image.unsqueeze(0)), 0)
         else:
+            with open(renderings_path + '/renderings.txt') as f:
+                while True:
+                    line = f.readline()
+                    if not line:
+                        break
+                    png_files.append(line.strip())
             selected_png_files = [png_files[i] for i in (np.linspace(0, 23, self.num_views, dtype=np.int_) + randrange(24)) % 24]
             # Load images into 4D tensors
             for i in selected_png_files:
@@ -83,12 +84,11 @@ class ShapeNetDataset(Dataset):
 
 
 if __name__ == '__main__':
-    print(env_vars['SHAPENET_VOXEL_DATASET_PATH'])
-    dataset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], 'train')
+    dataset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_PC_RENDERING_DATASET_PATH'], 'val', pointcloud_renderings=True)
     dataloader = DataLoader(dataset)
     shapenet_id, renderings, class_label, voxel = next(iter(dataloader))
     tensor_image = renderings[0, 0, :, :, :]
 
-    #print(len(dataset))
+    print(len(dataset))
     # cv2.imshow('Test image',tensor_image.permute(2,1,0).numpy())
     # cv2.waitKey(0)

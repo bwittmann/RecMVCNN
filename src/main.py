@@ -94,11 +94,12 @@ def main(args):
 
 
 def get_dataloader(args, env_vars, split):
-    if args.dataset == 'scannet':
+    if args.dataset == 'scannet' and args.pointcloud:
+        dataset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_PC_RENDERING_DATASET_PATH'], split, pointcloud_renderings=True)
+    elif args.dataset == 'scannet':
         dataset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], split, num_views=args.num_views)
     else:
         raise NotImplementedError
-            
     return DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
 
 def get_model(args):
@@ -150,6 +151,7 @@ if __name__ == "__main__":
     parser.add_argument("--test", action="store_true", help="test model on test split")
     parser.add_argument("--val", action="store_true", help="test model on val")
     parser.add_argument("--num_running_visualizations", type=int, help="visualizations for test script", default=3)
+    parser.add_argument("--pointcloud", action="store_true", help="enable pc renderings dataset")
 
 
     args = parser.parse_args()
