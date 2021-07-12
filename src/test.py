@@ -34,10 +34,11 @@ def test(device, model, args, dataloader, num_running_visualizations):
     reconstruction_iou = 0.
     model.eval()
 
-    confusion_matrix = torch.zeros(model.num_classes, model.num_classes)
+    confusion_matrix = torch.zeros(model.num_classes, model.num_classes, dtype=torch.int)
     viz_count = 0
 
     for batch in tqdm(dataloader):
+        
         shapenet_ids, renderings, class_labels, voxels = batch
         renderings, class_labels, voxels = renderings.to(device), class_labels.to(device), voxels.to(device)
 
@@ -65,7 +66,7 @@ def test(device, model, args, dataloader, num_running_visualizations):
 
                 if num_running_visualizations > viz_count:
                     visualize_voxel_grid(recon.cpu().numpy())
-                    viz_count += 1 
+                    viz_count += 1
 
             pred_labels = torch.argmax(predictions_classification, dim=1)
 
