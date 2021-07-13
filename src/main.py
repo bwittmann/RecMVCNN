@@ -94,9 +94,9 @@ def main(args):
 
 
 def get_dataloader(args, env_vars, split):
-    if args.dataset == 'scannet' and args.pointcloud:
+    if args.dataset == 'scannet_pc':
         dataset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_PC_RENDERING_DATASET_PATH'], split, pointcloud_renderings=True)
-    elif args.dataset == 'scannet':
+    elif args.dataset == 'scannet_mesh':
         dataset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], split, num_views=args.num_views)
     else:
         raise NotImplementedError
@@ -143,16 +143,14 @@ if __name__ == "__main__":
 
     # Arguments related to datasets
     # TODO: add more choices
-    parser.add_argument("--dataset", type=str, choices=['scannet'], help="used dataset", default='scannet')
+    parser.add_argument("--dataset", type=str, choices=['scannet_mesh', 'scannet_pc'], help="used dataset", default='scannet_mesh')
     parser.add_argument("--num_views", type=int, help="number of views, between 1 and 24", default=4)
     parser.add_argument("--num_workers", type=int, help="multi-process data loading", default=4)
     # TODO: implement
     #parser.add_argument("--augment", action="store_true", help="use data augmentation")
     parser.add_argument("--test", action="store_true", help="test model on test split")
-    parser.add_argument("--val", action="store_true", help="test model on val")
+    parser.add_argument("--val", action="store_true", help="test model on val split")
     parser.add_argument("--num_running_visualizations", type=int, help="visualizations for test script", default=3)
-    parser.add_argument("--pointcloud", action="store_true", help="enable pc renderings dataset")
-
 
     args = parser.parse_args()
 
