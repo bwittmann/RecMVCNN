@@ -5,8 +5,11 @@ MVCNN for 3D Shape Recognition and Reconstruction
 ## Environment Variables
 To use this project, you must set several envrionment variables beforehand in .env. Here is an example of what that should look like.
 ```
-SHAPENET_VOXEL_DATASET_PATH="/media/andrew/Storage HDD/data/ShapeNet/ShapeNetRendering"
-SHAPENET_RENDERING_DATASET_PATH="/media/andrew/Storage HDD/data/ShapeNet/ShapeNetVox32"
+SHAPENET_VOXEL_DATASET_PATH="/media/andrew/Storage HDD/data/ShapeNet/ShapeNetVox32"
+
+SHAPENET_RENDERING_DATASET_PATH="/media/andrew/Storage HDD/data/ShapeNet/ShapeNetRendering"
+SHAPENET_PC_RENDERING_DATASET_PATH="/media/andrew/Storage HDD/data/ShapeNet/ShapeNetPC"
+
 PROJECT_DIR_PATH="/home/andrew/repos/ML3D-MVCNN"
 ```
 
