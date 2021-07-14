@@ -212,7 +212,7 @@ if __name__ == '__main__':
     resolution = args.resolution
     num_points = args.num_points
 
-    env_vars = dotenv_values('.env')
+    env_vars = dotenv_values('../.env')
     dataset_name = 'shapenetcorev2'
     split = args.split
     d = Dataset(root=env_vars["SHAPENET_DATASET_PATH"], dataset_name=dataset_name, num_points=args.num_points, split=split)
@@ -235,13 +235,19 @@ if __name__ == '__main__':
     renderer.scene.camera.look_at([0, 0.25, -.5], [0, 1, 1], [0,1,0])
 
     label, id = f[:-4].split('/')
-    dir_path = env_vars["SHAPENET_DATASET_PATH"] + f'/ShapeNetPC/{label}/{id}/rendering'
+    dir_path = env_vars["SHAPENET_DATASET_PATH"] + f'/ShapeNetPC_incomplete/{label}/{id}/rendering'
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
     k += 1
     ps = ps.numpy()
     ps = ps # scale down pointcloud
+
+    # Cut points to create incomplete pc
+    axis = np.random.randint(3)
+    ps = ps[np.argsort(ps[:, axis])]
+    ps = ps[:600, :]
+
     for i in range(num_views):
         k += 1
         pcd = o3d.geometry.PointCloud()
