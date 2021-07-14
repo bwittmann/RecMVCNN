@@ -38,7 +38,6 @@ def test(device, model, args, dataloader, num_running_visualizations):
     viz_count = 0
 
     for batch in tqdm(dataloader):
-        
         shapenet_ids, renderings, class_labels, voxels = batch
         renderings, class_labels, voxels = renderings.to(device), class_labels.to(device), voxels.to(device)
 
@@ -82,7 +81,7 @@ def test(device, model, args, dataloader, num_running_visualizations):
     print("\n----------")
     print("Evaluation results:")
     print(f"Classifcation accuracy: {correct_classification / total_classification}")
-    print(f"Reconstruction IoU: {reconstruction_iou / total_classification}")
+    print(f"Reconstruction IoU: {reconstruction_iou / len(dataloader)}")
     print("----------\n")
 
     df_cm = pd.DataFrame(confusion_matrix.numpy(), index = [dataloader.dataset.class_name_mapping[i] for i in dataloader.dataset.classes],
