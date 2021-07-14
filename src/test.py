@@ -34,7 +34,7 @@ def test(device, model, args, dataloader, num_running_visualizations):
     reconstruction_iou = 0.
     model.eval()
 
-    confusion_matrix = torch.zeros(model.num_classes, model.num_classes)
+    confusion_matrix = torch.zeros(model.num_classes, model.num_classes, dtype=torch.int)
     viz_count = 0
 
     for batch in tqdm(dataloader):
@@ -65,7 +65,7 @@ def test(device, model, args, dataloader, num_running_visualizations):
 
                 if num_running_visualizations > viz_count:
                     visualize_voxel_grid(recon.cpu().numpy())
-                    viz_count += 1 
+                    viz_count += 1
 
             pred_labels = torch.argmax(predictions_classification, dim=1)
 
@@ -81,7 +81,7 @@ def test(device, model, args, dataloader, num_running_visualizations):
     print("\n----------")
     print("Evaluation results:")
     print(f"Classifcation accuracy: {correct_classification / total_classification}")
-    print(f"Total reconstruction IoU: {reconstruction_iou}")
+    print(f"Reconstruction IoU: {reconstruction_iou / len(dataloader)}")
     print("----------\n")
 
     df_cm = pd.DataFrame(confusion_matrix.numpy(), index = [dataloader.dataset.class_name_mapping[i] for i in dataloader.dataset.classes],
