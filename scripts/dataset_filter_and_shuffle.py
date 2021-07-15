@@ -18,40 +18,34 @@ if __name__ == '__main__':
     for i in range(len(train_dataset)):
         try:
             shapenet_id, renderings, class_label, voxel = train_dataset.__getitem__(i)
-
-            if ((list(renderings.shape) == [3,3,137,137]) and (type(voxel) == np.array)) is False:
-                invalid.append(shapenet_id)
-            else:
+            if (list(renderings.shape) == [3,3,137,137]) and (type(voxel) is np.ndarray):
                 valid.append(shapenet_id)
-            raise Exception
+            else:
+                invalid.append(shapenet_id)
         except:
             invalid.append(train_dataset.data_ids[i])
 
     for i in range(len(val_dataset)):
         try:
             shapenet_id, renderings, class_label, voxel = val_dataset.__getitem__(i)
-
-            if ((list(renderings.shape) == [3,3,137,137]) and (type(voxel) == np.array)) is False:
-                invalid.append(shapenet_id)
-            else:
+            if (list(renderings.shape) == [3,3,137,137]) and (type(voxel) is np.ndarray):
                 valid.append(shapenet_id)
-            raise Exception
+            else:
+                invalid.append(shapenet_id)
         except:
             invalid.append(val_dataset.data_ids[i])
 
     for i in range(len(test_dataset)):
         try:
             shapenet_id, renderings, class_label, voxel = test_dataset.__getitem__(i)
-
-            if ((list(renderings.shape) == [3,3,137,137]) and (type(voxel) == np.array)) is False:
-                invalid.append(shapenet_id)
-            else:
+            if (list(renderings.shape) == [3,3,137,137]) and (type(voxel) is np.ndarray):
                 valid.append(shapenet_id)
-            raise Exception
+            else:
+                invalid.append(shapenet_id)
         except:
             invalid.append(test_dataset.data_ids[i])
 
-    valid = random.shuffle(valid)
+    random.shuffle(valid)
     train = valid[:int(len(valid)*.7)]
     valid = valid[int(len(valid)*.7):]
     val = valid[int(len(valid)*.333):]
@@ -67,5 +61,5 @@ if __name__ == '__main__':
     with open("data/shapenet_pc/test.txt", "w") as outfile:
         outfile.write("\n".join(test))
 
-    print("invalid len: " +  len(invalid))
-    print("train/val/test lens:" + len(train) + "/" + len(val) + "/" + len(test))
+    print("invalid len: " +  str(len(invalid)))
+    print("train/val/test lens:" + str(len(train)) + "/" + str(len(val)) + "/" + str(len(test)))
