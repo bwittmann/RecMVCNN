@@ -24,22 +24,29 @@ def main(args):
     model.to(device)
 
     # Get optim
-    non_rec_params = []
+    backbone_params = []
     rec_params = []
+    cls_params = []
 
     for param_name, param in model.named_parameters():
+        print(param_name)
         if not param.requires_grad:
             continue
         if "decoder" in param_name:
             rec_params.append(param)
+        elif "classifier" in param_name:
+            cls_params.append(param)
         else:
-            non_rec_params.append(param)
+            backbone_params.append(param)
 
     param_dicts = [
-        {"params" : non_rec_params},
+        {"params" : backbone_params},
         {"params" : rec_params,
          "lr" : args.lr_rec_head,
-         "weight_decay" : args.wd_rec_head}
+         "weight_decay" : args.wd_rec_head},
+        {"params" : cls_params,
+        "lr" : args.lr_cls_head,
+        "weight_decay" : args.wd_cls_head},
     ]
 
     optimizer = optim.Adam(param_dicts, lr=args.lr, weight_decay=args.wd)
@@ -124,11 +131,16 @@ if __name__ == "__main__":
     # Arguments related training
     parser.add_argument("--lr", type=float, help="learning rate", default=5e-5)
     parser.add_argument("--lr_rec_head", type=float, help="learning rate", default=1e-3)
+    parser.add_argument("--lr_cls_head", type=float, help="learning rate", default=5e-5)
+
     parser.add_argument("--lr_decay_factor", type=float, help="decay factor of the lr scheduler", default=0.5)
     parser.add_argument("--lr_decay_patience", type=float, help="patience of the lr scheduler", default=10)
     parser.add_argument("--lr_decay_cooldown", type=float, help="cooldown of the lr scheduler", default=0)
+
     parser.add_argument("--wd", type=float, help="weight decay", default=0)
     parser.add_argument("--wd_rec_head", type=float, help="weight decay", default=0)
+    parser.add_argument("--wd_cls_head", type=float, help="weight decay", default=0)
+
     parser.add_argument("--loss_coef_cls", type=float, help="loss coefficient of the classification task", default=0.5)
     parser.add_argument("--loss_coef_rec", type=float, help="loss coefficient of the reconstruction task", default=0.5)
 
