@@ -111,7 +111,7 @@ def train(device, model, optimizer, scheduler, args, train_dataloader, val_datal
                         predictions_classification, predictions_reconstruction = model(renderings.float())
 
                         val_loss_classification = criterion_classification(predictions_classification, class_labels)
-                        val_loss_running_classification += val_loss_classification
+                        val_loss_running_classification += val_loss_classification.item()
 
                         if predictions_reconstruction != None:
                             val_loss_reconstruction = criterion_reconstruction(predictions_reconstruction, voxels)
