@@ -25,6 +25,7 @@ class ShapeNetDataset(Dataset):
 
         self.classes = sorted(self.class_name_mapping.keys())
 
+        self.split = split
         split_path = f'{env_vars["PROJECT_DIR_PATH"]}/data/{split}.txt'
         split_path = split_path if not pointcloud_renderings else f'{env_vars["PROJECT_DIR_PATH"]}/data/shapenet_pc/{split}.txt'
         with open(split_path) as f:
@@ -62,7 +63,10 @@ class ShapeNetDataset(Dataset):
                     if not line:
                         break
                     png_files.append(line.strip())
-            selected_png_files = [png_files[i] for i in (np.linspace(0, 23, self.num_views, dtype=np.int_) + randrange(24)) % 24]
+            if self.split == "test":
+                selected_png_files = [png_files[i] for i in np.linspace(0, 23, self.num_views, dtype=np.int_)]
+            else:
+                selected_png_files = [png_files[i] for i in (np.linspace(0, 23, self.num_views, dtype=np.int_) + randrange(24)) % 24]
             # Load images into 4D tensors
             for i in selected_png_files:
                 image = cv2.imread(renderings_path + '/' + i)
