@@ -23,7 +23,7 @@ shapenetpart_seg_num = [4, 2, 2, 4, 4, 3, 3, 2, 4, 2, 6, 2, 3, 3, 3, 3]
 shapenetpart_seg_start_index = [0, 4, 6, 8, 12, 16, 19, 22, 24, 28, 30, 36, 38, 41, 44, 47]
 
 
-# An Tao's code from the poincloud repos
+# An Tao's code from the poincloud repo
 def translate_pointcloud(pointcloud):
     xyz1 = np.random.uniform(low=2./3., high=3./2., size=[3])
     xyz2 = np.random.uniform(low=-0.2, high=0.2, size=[3])
@@ -183,7 +183,7 @@ class Dataset(data.Dataset):
 
     def __len__(self):
         return self.data.shape[0]
-###
+#######
 
 def custom_draw_geometry_with_rotation(pcd):
     def change_background_to_black(vis):
@@ -203,6 +203,7 @@ if __name__ == '__main__':
     parser.add_argument("--use_checkpoint", type=str, help="specify the checkpoint root", default="")
     parser.add_argument("--index", type=int, help="batch size", required=True)
     parser.add_argument("--split", help="batch size", required=True)
+    parser.add_argument("--incomplete", action="store_true", help="render incomplete point cloud")
 
     args = parser.parse_args()
 
@@ -235,7 +236,12 @@ if __name__ == '__main__':
     renderer.scene.camera.look_at([0, 0.25, -.5], [0, 1, 1], [0,1,0])
 
     label, id = f[:-4].split('/')
-    dir_path = env_vars["SHAPENET_DATASET_PATH"] + f'/ShapeNetPC_incomplete/{label}/{id}/rendering'
+    
+    if args.incomplete:
+        dir_path = env_vars["SHAPENET_DATASET_PATH"] + f'/ShapeNetPC_incomplete/{label}/{id}/rendering'
+    else:
+        dir_path = env_vars["SHAPENET_DATASET_PATH"] + f'/ShapeNetPC/{label}/{id}/rendering' 
+
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
@@ -244,9 +250,10 @@ if __name__ == '__main__':
     ps = ps # scale down pointcloud
 
     # Cut points to create incomplete pc
-    axis = np.random.randint(3)
-    ps = ps[np.argsort(ps[:, axis])]
-    ps = ps[:600, :]
+    if args.incomplete:
+        axis = np.random.randint(3)
+        ps = ps[np.argsort(ps[:, axis])]
+        ps = ps[:600, :]
 
     for i in range(num_views):
         k += 1
@@ -269,7 +276,6 @@ if __name__ == '__main__':
         # r_z = np.array([[np.cos(eps), -np.sin(eps), 0],
         #             [np.sin(eps), np.cos(eps), 0],
         #             [0, 0, 1]])
-
 
         pcd = pcd.rotate(r_y)
         pcd = pcd.translate(np.array([0,0,-1]))
