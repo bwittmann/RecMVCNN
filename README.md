@@ -8,31 +8,9 @@ The big advantage of this approach is that we can leverage the expressiveness of
 
 For further details, ablation studies, and results, please refer to the report and presentation in the docs.
 
-The table below shows multi-viee...
+Some reconstruction results are listed below.
 
-
-<div class="row">
-<caption>Multi-view images of rendered point cloud.</caption>
-  <div class="col-sm">
-    <img src="docs/images/pc_00.png" width=120>
-    <img src="docs/images/pc_01.png" width=120>
-    <img src="docs/images/pc_02.png" width=120>
-  </div>
-<caption>Multi-view images of rendered incomplete point cloud.</caption>
-  <div class="col-sm">
-    <img src="docs/images/pc_inc_00.png" width=120>
-    <img src="docs/images/pc_inc_01.png" width=120>
-    <img src="docs/images/pc_inc_02.png" width=120>
-  </div>
-<caption>Multi-view images of rendered colored mesh.</caption>
-  <div class="col-sm">
-    <img src="docs/images/mesh_00.png" width=120>
-    <img src="docs/images/mesh_01.png" width=120>
-    <img src="docs/images/mesh_02.png" width=120>
-  </div>
-</div>
-
-
+<img src="docs/images/RecMVCNN_Reconstructions.png" alt="Reconstructed 3D shapes." class="center" width=700>
 
 # Usage
 
@@ -53,6 +31,11 @@ Complete point cloud representation:
 Incomplete point cloud representation: 
 
     bash generate_pointcloud_incomplete_dataset.sh
+
+
+Examples of rendered multi-view images of different data domains are depicted in the table below.
+
+<img src="docs/images/RecMVCNN_MVImages.png" alt="Multi-view images of different data domains." class="center" width=450>
 
 ## Environment Variables
 To use this project, you must set several environment variables beforehand in a .env file using dotenv.
