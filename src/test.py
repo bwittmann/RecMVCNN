@@ -14,7 +14,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-def test(device, model, args, dataloader, num_running_visualizations):
+def test(device, model, args, dataloader, num_running_visualizations, sort_iou=True):
     visualizations_path = os.path.join(env_vars['PROJECT_DIR_PATH'], 'visualizations/{}'.format(args.tag))
     
     if not os.path.exists(visualizations_path):
@@ -37,6 +37,8 @@ def test(device, model, args, dataloader, num_running_visualizations):
     confusion_matrix = torch.zeros(model.num_classes, model.num_classes, dtype=torch.int)
     viz_count = 0
 
+    iou_dict = {}
+
     for batch in tqdm(dataloader):
         shapenet_ids, renderings, class_labels, voxels = batch
         renderings, class_labels, voxels = renderings.to(device), class_labels.to(device), voxels.to(device)
@@ -56,6 +58,12 @@ def test(device, model, args, dataloader, num_running_visualizations):
                 loss_running_total += loss.item()
                 iou = evaluate_reconstruction(predictions_reconstruction, voxels)
                 reconstruction_iou += iou
+
+                if sort_iou:
+                    for i in range(predictions_reconstruction.shape[0]):
+                        single_iou = evaluate_reconstruction(predictions_reconstruction[i], voxels[i])
+                        iou_dict[shapenet_ids[i]] = single_iou
+
             else:
                 loss = loss_classification
                 loss_running_total += loss_classification.item()
@@ -77,6 +85,12 @@ def test(device, model, args, dataloader, num_running_visualizations):
             correct_classification += correct_pred 
 
     loss_classification = loss_running_classification / len(dataloader)
+
+    if sort_iou:
+        sorted_iou = sorted(iou_dict.items(), key=lambda x: x[1])
+        with open(visualizations_path + '/iou_sorted.txt', "w") as f:
+            for i in sorted_iou:
+                f.write("%s\n" % (i[0] + " " + str(i[1])))
 
     print("\n----------")
     print("Evaluation results:")
