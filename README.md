@@ -1,6 +1,6 @@
 # RecMVCNN
 
-RecMVCNN is a lightweight multi-view based approach for classification and reconstruction of a 3D structure. It takes rendered images of a 3D structure like a mesh, a point cloud, or a voxel grid as input and simultaneous classifies the content of those rendered images and reconstructs the 3D shape in the form of a voxel grid. The architecture of our approach is depicted below.
+RecMVCNN is a lightweight multi-view based approach for classification and reconstruction of a 3D structure. It takes rendered images of a 3D representation like a mesh, a point cloud, or a voxel grid as input and simultaneous classifies the content of those rendered images and reconstructs the 3D shape in the form of a voxel grid. The architecture of our approach is depicted below.
 
 <img src="docs/images/RecMVCNN_Architecture.png" alt="Architecture of our approach.">
 
@@ -8,9 +8,9 @@ The big advantage of this approach is that we can leverage the expressiveness of
 
 For further details, ablation studies, and results, please refer to the report and presentation in the docs.
 
-Some reconstruction results are listed below.
+To demonstrate the performance of our approach, some reconstruction results are listed below.
 
-<img src="docs/images/RecMVCNN_Reconstructions.png" alt="Reconstructed 3D shapes." class="center" width=700>
+<img src="docs/images/RecMVCNN_Reconstructions.png" alt="Reconstructed 3D shapes." class="center" width=1500>
 
 # Usage
 
@@ -19,7 +19,7 @@ The voxelized models and rendered images of corresponding meshes can be download
 - ShapeNet rendering images: http://cvgl.stanford.edu/data2/ShapeNetRendering.tgz
 - ShapeNet voxelized models: http://cvgl.stanford.edu/data2/ShapeNetVox32.tgz
 
-If you want to train the model on renderings of point clouds, you should download the point cloud representations of ShapeNet objects from the repo below.
+If you want to train the model on renderings of point clouds, you should download the point cloud representations of ShapeNet objects from the repository below.
 - ShapeNet point cloud representation for rendering: https://github.com/AnTao97/PointCloudDatasets
 
 In addition, you have to render multi-view images of the point cloud representations yourself if desired. Place the folder containing the ShapeNet point cloud representation in the ShapeNet directory and run one of the scripts listed bellow. The second script renders incomplete point cloud representations. This is done by reducing the points in the point cloud to 60% with the help of a randomly selected plane used for splitting.
@@ -33,9 +33,9 @@ Incomplete point cloud representation:
     bash generate_pointcloud_incomplete_dataset.sh
 
 
-Examples of rendered multi-view images of different data domains are depicted in the table below.
+Examples of rendered multi-view images of incomplete point clouds and colored meshed are depicted below.
 
-<img src="docs/images/RecMVCNN_MVImages.png" alt="Multi-view images of different data domains." class="center" width=450>
+<img src="docs/images/RecMVCNN_Data.png" alt="Multi-view images of different data domains." class="center" width=1500>
 
 ## Environment Variables
 To use this project, you must set several environment variables beforehand in a .env file using dotenv.
@@ -50,12 +50,42 @@ To use this project, you must set several environment variables beforehand in a 
 
 ## Training
 
+ShapeNet colored meshes, only classification:
+
+    python src/main.py --tag <experiment tag> --num_views 3 --dataset shapenet_mesh --loss_coef_cls 1 --no_reconstrustion
+
+ShapeNet colored meshes, only reconstruction:
+
+    python src/main.py --tag <experiment tag> --num_views 3 --dataset shapenet_mesh --loss_coef_cls 0 --loss_coef_rec 1
+
+ShapeNet colored meshes, classification and reconstruction:
+
+    python src/main.py --tag <experiment tag> --num_views 3 --dataset shapenet_mesh --loss_coef_cls 0.05 --loss_coef_rec 0.95
+
+Additional flag for choices of different 2D CNN backbones:
+
+    --backbone <select from: [resnet18_1x1conv, resnet18_stdconv, mobilenetv3l_1x1conv, mobilenetv3s_1x1conv, vgg16_1x1conv]>
+
+Additional flag for concatenating the classification scores to the input of the reconstruction branch:
+    
+    --cat_cls_res
+
+Additional flag for changing the dataset:
+
+    --dataset <select from: [shapenet_mesh, shapenet_pc, shapenet_pc_inc]>
+
+
 ## Testing / Inference
 
+Additional flags for testing the performance of the model on the test set:
+
+    --test --use_checkpoint <Path/To/Experiment/model_best.tar>
 
 
 
 todo:
+comment and clean code
 get ridd of todos
-improve generate_pointcloud_dataset.
+improve generate_pointcloud_dataset
 incorporate incomplete pc as a flag
+change standard params to the one we were using during training
