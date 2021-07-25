@@ -219,8 +219,12 @@ if __name__ == '__main__':
     d = Dataset(root=env_vars["SHAPENET_DATASET_PATH"], dataset_name=dataset_name, num_points=args.num_points, split=split)
     
 
-    if not os.path.exists(env_vars["SHAPENET_DATASET_PATH"] + "/ShapeNetPC"):
-        os.mkdir(env_vars["SHAPENET_DATASET_PATH"] + "/ShapeNetPC")
+    if args.incomplete:
+        if not os.path.exists(env_vars["SHAPENET_DATASET_PATH"] + "/ShapeNetPC_incomplete"):
+            os.mkdir(env_vars["SHAPENET_DATASET_PATH"] + "/ShapeNetPC_incomplete")
+    else:
+        if not os.path.exists(env_vars["SHAPENET_DATASET_PATH"] + "/ShapeNetPC"):
+            os.mkdir(env_vars["SHAPENET_DATASET_PATH"] + "/ShapeNetPC")
 
 
     if (args.index % 100) == 0:
