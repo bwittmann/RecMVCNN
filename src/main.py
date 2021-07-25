@@ -29,7 +29,6 @@ def main(args):
     cls_params = []
 
     for param_name, param in model.named_parameters():
-        print(param_name)
         if not param.requires_grad:
             continue
         if "decoder" in param_name:
@@ -90,7 +89,6 @@ def main(args):
     val_dataloader = get_dataloader(args, env_vars, 'val')
     test_dataloader = get_dataloader(args, env_vars, 'test')
 
-    # TODO: Add test data split
     # Train
     if args.test:
         test(device, model, args, test_dataloader, args.num_running_visualizations)
@@ -103,6 +101,8 @@ def main(args):
 def get_dataloader(args, env_vars, split):
     if args.dataset == 'shapenet_pc':
         dataset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_PC_RENDERING_DATASET_PATH'], split, pointcloud_renderings=True)
+    elif args.dataset == 'shapenet_pc_inc':
+        dataset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_PC_INC_RENDERING_DATASET_PATH'], split, pointcloud_renderings=True)
     elif args.dataset == 'shapenet_mesh':
         dataset = ShapeNetDataset(env_vars['SHAPENET_VOXEL_DATASET_PATH'], env_vars['SHAPENET_RENDERING_DATASET_PATH'], split, num_views=args.num_views)
     else:
@@ -119,8 +119,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # Standard arguments
-    parser.add_argument("--batch_size", type=int, help="batch size", default=14)
-    parser.add_argument("--epoch", type=int, help="number of epochs", default=500)
+    parser.add_argument("--batch_size", type=int, help="batch size", default=64)
+    parser.add_argument("--epoch", type=int, help="number of epochs", default=150)
     parser.add_argument("--seed", type=int, help="random seed", default=42)
     parser.add_argument("--overfit", action="store_true", help="use reduced dataset for overfitting")
     parser.add_argument("--tag", type=str, required=True, help="experiment tag for tensorboard logger", default='')
@@ -141,22 +141,22 @@ if __name__ == "__main__":
     parser.add_argument("--wd_rec_head", type=float, help="weight decay", default=0)
     parser.add_argument("--wd_cls_head", type=float, help="weight decay", default=0)
 
-    parser.add_argument("--loss_coef_cls", type=float, help="loss coefficient of the classification task", default=0.5)
-    parser.add_argument("--loss_coef_rec", type=float, help="loss coefficient of the reconstruction task", default=0.5)
+    parser.add_argument("--loss_coef_cls", type=float, help="loss coefficient of the classification task", default=0.05)
+    parser.add_argument("--loss_coef_rec", type=float, help="loss coefficient of the reconstruction task", default=0.95)
 
     # Arguments related to MVCNN model
     parser.add_argument("--no_reconstruction", action="store_true", help="no reconstruction, only classification")
-    parser.add_argument("--use_fusion_module", action="store_true", help="use fusion module for reconstruction")
     parser.add_argument("--num_classes", type=int, help="number of classes", default=13)
     parser.add_argument("--backbone", type=str, choices=['resnet18_1x1conv', 'resnet18_stdconv', 'mobilenetv3l_1x1conv', 'mobilenetv3s_1x1conv', 'vgg16_1x1conv'], 
                         help="feature extraction backbone", default='resnet18_1x1conv')
     parser.add_argument("--cat_cls_res", action="store_true", help="concatenate classification results to reconstruction feature map")
+    # TODO: implement
+    parser.add_argument("--use_fusion_module", action="store_true", help="use fusion module to refine reconstructions")
     parser.add_argument("--dropout_prob", type=float, help="dropout probability in linear layers of classification head", default=0.5)
 
     # Arguments related to datasets
-    # TODO: add more choices
-    parser.add_argument("--dataset", type=str, choices=['shapenet_mesh', 'shapenet_pc'], help="used dataset", default='shapenet_mesh')
-    parser.add_argument("--num_views", type=int, help="number of views, between 1 and 24", default=4)
+    parser.add_argument("--dataset", type=str, choices=['shapenet_mesh', 'shapenet_pc', 'shapenet_pc_inc'], help="used dataset", default='shapenet_mesh')
+    parser.add_argument("--num_views", type=int, help="number of views, between 1 and 24", default=3)
     parser.add_argument("--num_workers", type=int, help="multi-process data loading", default=4)
     # TODO: implement
     #parser.add_argument("--augment", action="store_true", help="use data augmentation")
@@ -166,7 +166,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # For reproducability # TODO: check functionalilty
+    # For reproducability
     torch.manual_seed(args.seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False

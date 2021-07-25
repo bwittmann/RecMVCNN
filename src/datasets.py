@@ -69,8 +69,11 @@ class ShapeNetDataset(Dataset):
                 selected_png_files = [png_files[i] for i in (np.linspace(0, 23, self.num_views, dtype=np.int_) + randrange(24)) % 24]
             # Load images into 4D tensors
             for i in selected_png_files:
-                image = cv2.imread(renderings_path + '/' + i)
-                image = torch.from_numpy(image).permute(2,1,0)
+                try:
+                    image = cv2.imread(renderings_path + '/' + i)
+                    image = torch.from_numpy(image).permute(2,1,0)
+                except:
+                    print('Rendering could not be found in the dataset.')
                 if renderings is None:
                     renderings = image.unsqueeze(0)
                 else:

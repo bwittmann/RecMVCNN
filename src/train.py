@@ -22,7 +22,6 @@ def train(device, model, optimizer, scheduler, args, train_dataloader, val_datal
     criterion_reconstruction = nn.BCELoss()
     criterion_reconstruction.to(device)
 
-    
     # Init loss and acc related values
     train_loss_running_classification = 0.
     train_loss_running_reconstruction = 0.
@@ -88,7 +87,7 @@ def train(device, model, optimizer, scheduler, args, train_dataloader, val_datal
                 tb_logger.add_scalar('acc/train_iou', train_reconstruction_iou / len(train_dataloader), epoch)
             tb_logger.add_scalar('acc/train_cls', train_accuracy_classificaton, epoch)
 
-            for param_group, info in zip(optimizer.param_groups, ['_cls', '_rec_head']):
+            for param_group, info in zip(optimizer.param_groups, ['backbone', 'rec_head', 'cls_head']):
                 tb_logger.add_scalar('lr/' + info, param_group['lr'], epoch)
 
             train_loss_running = 0.
