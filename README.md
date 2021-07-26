@@ -37,6 +37,8 @@ Examples of rendered multi-view images of incomplete point clouds and colored me
 
 <img src="docs/images/RecMVCNN_Data.png" alt="Multi-view images of different data domains." class="center" width=1500>
 
+To construct individual splits or filter the dataset, please refer to the script `dataset_filter_and_shuffle.py`.
+
 ## Environment Variables
 To use this project, you must set several environment variables beforehand in a .env file using dotenv.
 
@@ -80,12 +82,3 @@ Additional flag for changing the dataset:
 Additional flags for testing the performance of the model on the test set:
 
     --test --use_checkpoint <Path/To/Experiment/model_best.tar>
-
-
-
-todo:
-comment and clean code
-get ridd of todos
-improve generate_pointcloud_dataset
-incorporate incomplete pc as a flag
-change standard params to the one we were using during training
