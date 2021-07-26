@@ -6,11 +6,9 @@ from glob import glob
 import numpy as np
 import torch.utils.data as data
 
-import time
 import argparse
 import numpy as np
 import open3d as o3d
-import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 from dotenv import dotenv_values
 import open3d as o3d
@@ -23,29 +21,29 @@ shapenetpart_seg_num = [4, 2, 2, 4, 4, 3, 3, 2, 4, 2, 6, 2, 3, 3, 3, 3]
 shapenetpart_seg_start_index = [0, 4, 6, 8, 12, 16, 19, 22, 24, 28, 30, 36, 38, 41, 44, 47]
 
 
-# An Tao's code from the poincloud repo
 def translate_pointcloud(pointcloud):
+    """From https://github.com/AnTao97/PointCloudDatasets."""
     xyz1 = np.random.uniform(low=2./3., high=3./2., size=[3])
     xyz2 = np.random.uniform(low=-0.2, high=0.2, size=[3])
        
     translated_pointcloud = np.add(np.multiply(pointcloud, xyz1), xyz2).astype('float32')
     return translated_pointcloud
 
-
 def jitter_pointcloud(pointcloud, sigma=0.01, clip=0.02):
+    """From https://github.com/AnTao97/PointCloudDatasets."""
     N, C = pointcloud.shape
     pointcloud += np.clip(sigma * np.random.randn(N, C), -1*clip, clip)
     return pointcloud
 
-
 def rotate_pointcloud(pointcloud):
+    """From https://github.com/AnTao97/PointCloudDatasets."""
     theta = np.pi*2 * np.random.rand()
     rotation_matrix = np.array([[np.cos(theta), -np.sin(theta)],[np.sin(theta), np.cos(theta)]])
     pointcloud[:,[0,2]] = pointcloud[:,[0,2]].dot(rotation_matrix) # random rotation (x,z)
     return pointcloud
 
-
 class Dataset(data.Dataset):
+    """From https://github.com/AnTao97/PointCloudDatasets."""
     def __init__(self, root, dataset_name='modelnet40', class_choice=None,
             num_points=2048, split='train', load_name=True, load_file=True,
             segmentation=False, random_rotate=False, random_jitter=False, 
@@ -183,7 +181,6 @@ class Dataset(data.Dataset):
 
     def __len__(self):
         return self.data.shape[0]
-#######
 
 def custom_draw_geometry_with_rotation(pcd):
     def change_background_to_black(vis):
@@ -218,7 +215,6 @@ if __name__ == '__main__':
     split = args.split
     d = Dataset(root=env_vars["SHAPENET_DATASET_PATH"], dataset_name=dataset_name, num_points=args.num_points, split=split)
     
-
     if args.incomplete:
         if not os.path.exists(env_vars["SHAPENET_DATASET_PATH"] + "/ShapeNetPC_incomplete"):
             os.mkdir(env_vars["SHAPENET_DATASET_PATH"] + "/ShapeNetPC_incomplete")
@@ -229,7 +225,6 @@ if __name__ == '__main__':
 
     if (args.index % 100) == 0:
         print(f'Processing renderings {args.index} / {d.__len__()}')
-
 
     k = 0
     ps, lb, n, f = d.__getitem__(args.index)
@@ -269,17 +264,9 @@ if __name__ == '__main__':
         beta = 2 * np.pi * (i / num_views)  
         eps = 0
 
-        # r_x = np.array([[1, 0, 0],
-        #             [0, np.cos(alpha), -np.sin(alpha)],
-        #             [0, np.sin(alpha), np.cos(alpha)]])
-
         r_y = np.array([[np.cos(beta), 0, np.sin(beta)],
                     [0, 1, 0],
                     [-np.sin(beta), 0, np.cos(beta)]])
-
-        # r_z = np.array([[np.cos(eps), -np.sin(eps), 0],
-        #             [np.sin(eps), np.cos(eps), 0],
-        #             [0, 0, 1]])
 
         pcd = pcd.rotate(r_y)
         pcd = pcd.translate(np.array([0,0,-1]))

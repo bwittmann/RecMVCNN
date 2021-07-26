@@ -1,16 +1,27 @@
+"""Deep learning models."""
+
 import torch
 import torch.nn as nn
 import torchvision.models as models
 
 
 class ReconstructionMVCNN(nn.Module):
-    """
-        Inspired by:
-        - https://github.com/RBirkeland/MVCNN-PyTorch
-        - https://github.com/hzxie/Pix2Vox/tree/Pix2Vox-F
-    """
+    """Main module of RecMVCNN.
 
+    This architecture is able to classify and reconstruct a 3D shape via multi-view images.
+    The model is inspired by the Pix2Vox-F and MVCNN approach.
+    """
     def __init__(self, num_classes, backbone_type, no_reconstruction, use_fusion, cat_cls_res, dropout_prob):
+        """Initialization method.
+
+        Args:
+            num_classes: int indicating the number of individual classes in the dataset
+            backbone_type: str describing the type of the 2D CNN backbone
+            no_reconstruction: bool indicating to only classify the 3D content
+            use_fusion: bool indicating the use of a fusion module to refine the 3D reconstructions
+            cat_cls_res: make use of the classification output for the reconstruction task
+            dropout_prob: float describing the dropout probability in the classification network
+        """
         super().__init__()
         self.num_classes = num_classes
         self.no_reconstuction = no_reconstruction
@@ -46,8 +57,15 @@ class ReconstructionMVCNN(nn.Module):
         )
 
     def forward(self, x):
-        batch_size = x.shape[0]
+        """Forward pass of RecMVCNN.
 
+        Args:
+            x: a torch.tensor consisting of RBG images
+
+        Returns:
+            two torch.tensors representing the classification and 
+            reconstruction predicions
+        """
         # Use shared backbone to extract features of input images
         x = x.transpose(0, 1) # [V, B, 3, H, W] rgb images
 
@@ -87,7 +105,7 @@ class ReconstructionMVCNN(nn.Module):
 
 
 class FusionModule(nn.Module):
-
+    """A fusion module to refine the 3D reconstructions."""
     def __init__(self):
         super().__init__()
         # TODO: implement
@@ -95,10 +113,12 @@ class FusionModule(nn.Module):
 
 
 class Backbone(nn.Module):
-    """
-        Backbone for the 2D feature extraction
-    """
+    """Pre-trained CNN backbone for the 2D feature extraction."""
     def __init__(self, backbone_type):
+        """Initialization method.
+
+        Args: Type of the backbone for feature extraction
+        """
         super().__init__()
         # Backbone for the 2D feature extraction
         if backbone_type == 'vgg16_1x1conv':
@@ -163,15 +183,31 @@ class Backbone(nn.Module):
             raise NotImplementedError
 
     def forward(self, x):
+        """Forward pass of the backbone.
+
+        Args:
+            x: a RBG image
+
+        Returns:
+            Fetures extracted from the RGB image
+        """
         return self.features(x)
 
 
 class Decoder(nn.Module):
-
+    """The reconstruction branch.
+    
+    Takes as input a list of features from 2D multi-view images and estimates a 3D 
+    reconstruction in the form of a occupancy voxel grid.
+    """
     def __init__(self, in_channels):
+        """Initialization method.
+        
+        Params:
+            in_channels: channels of the feature representations
+        """
         super().__init__()
         # Decoder for the reconstruction of 3D features
-        # TODO: think of adding bias, num channels too much (vanilla version: 392 channels) -> network that reduces channels and spacial dim
         self.decoder_features = nn.Sequential(
             # Layer 1: out [B, 128, 4, 4, 4]
             nn.ConvTranspose3d(in_channels=in_channels, out_channels=128, kernel_size=4, stride=2, bias=False, padding=1),
@@ -198,6 +234,14 @@ class Decoder(nn.Module):
         )
 
     def forward(self, feature_list):
+        """Forward pass of the reconstruction decoder.
+
+        Args:
+            feature_list: a list containing the features of the multi-view images
+
+        Returns:
+            the 32x32x32 predicted reconstruction of the 3D shape
+        """
         batch_size = feature_list[0].shape[0]
 
         raw_decoded_features_list = []
@@ -217,4 +261,3 @@ class Decoder(nn.Module):
             raw_decoded_features_list.append(raw_decoded_features)
 
         return generated_volume_list, raw_decoded_features_list
-    

@@ -1,20 +1,30 @@
+"""Testing / inference of a pre-trained model."""
+
 import os
 
 import torch 
-import numpy as np
 import torch.nn as nn
-
+import seaborn as sn
+import pandas as pd
+import matplotlib.pyplot as plt
 from tqdm import tqdm
+
 from train import evaluate_classification, evaluate_reconstruction
 from utils import env_vars, save_voxel_grid
 from utils import visualize_voxel_grid
 
-import seaborn as sn
-import pandas as pd
-import matplotlib.pyplot as plt
-
 
 def test(device, model, args, dataloader, num_running_visualizations, sort_iou=True):
+    """Function to evaluate the performance of a pre-trained model.
+
+    Args:
+        device: either cpu or cuda
+        model: the model of the neural network
+        args: arguments processed by argparse
+        dataloader: torch dataloader of the validation or test dataset
+        num_running_visualizations: number of visualizations to save
+        sort_iou: Sort IoU values to estimate best and worst performance over classes
+    """
     visualizations_path = os.path.join(env_vars['PROJECT_DIR_PATH'], 'visualizations/{}'.format(args.tag))
     
     if not os.path.exists(visualizations_path):

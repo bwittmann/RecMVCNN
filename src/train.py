@@ -1,3 +1,5 @@
+"""Main loop for training and validation."""
+
 import os
 
 import torch 
@@ -10,8 +12,19 @@ from dotenv import dotenv_values
 
 
 def train(device, model, optimizer, scheduler, args, train_dataloader, val_dataloader):
-    """
-    Tried to keep the structure similar to the exercises.
+    """Function containing the training and validation loop.
+
+    Furthermore, this function logs values with tensorboard and save checkpoints 
+    model_best.tar and model_last.tar.
+
+    Args:
+        device: either cpu or cuda
+        model: the model of the neural network
+        optimizer: optimizer of the neural network
+        scheduler: torch.optim.lr_scheduler
+        args: arguments processed by argparse
+        train_dataloader: torch dataloader of the training dataset
+        val_dataloader: torch dataloader of the validation dataset
     """
     # Init tensorboard logger
     tb_logger = SummaryWriter(comment=args.tag)
@@ -55,7 +68,7 @@ def train(device, model, optimizer, scheduler, args, train_dataloader, val_datal
                 train_loss_classification = criterion_classification(predictions_classification, class_labels)
                 train_loss_running_classification += train_loss_classification.item()
 
-                if predictions_reconstruction != None:
+                if predictions_reconstruction is not None:
                     train_loss_reconstruction = criterion_reconstruction(predictions_reconstruction, voxels)
                     train_loss_running_reconstruction += train_loss_reconstruction.item()
                     train_loss = args.loss_coef_cls * train_loss_classification + args.loss_coef_rec * train_loss_reconstruction
@@ -81,7 +94,7 @@ def train(device, model, optimizer, scheduler, args, train_dataloader, val_datal
 
             print('[epoch:{}] train_loss: {}'.format(epoch, train_loss_running / len(train_dataloader)))
             tb_logger.add_scalar('loss/train_cls', train_loss_running_classification / len(train_dataloader), epoch)
-            if predictions_reconstruction != None:
+            if predictions_reconstruction is not None:
                 tb_logger.add_scalar('loss/train', train_loss_running / len(train_dataloader), epoch)
                 tb_logger.add_scalar('loss/train_rec', train_loss_running_reconstruction / len(train_dataloader), epoch)
                 tb_logger.add_scalar('acc/train_iou', train_reconstruction_iou / len(train_dataloader), epoch)
@@ -112,7 +125,7 @@ def train(device, model, optimizer, scheduler, args, train_dataloader, val_datal
                         val_loss_classification = criterion_classification(predictions_classification, class_labels)
                         val_loss_running_classification += val_loss_classification.item()
 
-                        if predictions_reconstruction != None:
+                        if predictions_reconstruction is not None:
                             val_loss_reconstruction = criterion_reconstruction(predictions_reconstruction, voxels)
                             val_loss_running_reconstruction += val_loss_reconstruction.item()
                             val_loss = args.loss_coef_cls * val_loss_classification + args.loss_coef_rec * val_loss_reconstruction
@@ -125,16 +138,16 @@ def train(device, model, optimizer, scheduler, args, train_dataloader, val_datal
 
                         correct_pred = evaluate_classification(predictions_classification, class_labels)
                         val_total_classification += predictions_classification.shape[0]
-                        val_correct_classification += correct_pred 
+                        val_correct_classification += correct_pred
 
                 # Estimate val loss and acc
                 val_accuracy_classificaton = 100 * val_correct_classification / val_total_classification
                 val_loss = val_loss_running / len(val_dataloader)
 
-                # Logging 
+                # Logging
                 print('[epoch:{}] val_loss: {}, val_acc_cls: {}'.format(epoch, val_loss, val_accuracy_classificaton))
                 tb_logger.add_scalar('loss/val_cls', val_loss_running_classification / len(val_dataloader), epoch)
-                if predictions_reconstruction != None:
+                if predictions_reconstruction is not None:
                     tb_logger.add_scalar('loss/val', val_loss, epoch)
                     tb_logger.add_scalar('loss/val_rec', val_loss_running_reconstruction / len(val_dataloader), epoch)
                     tb_logger.add_scalar('acc/val_iou', val_reconstruction_iou / len(val_dataloader), epoch)
@@ -169,7 +182,15 @@ def train(device, model, optimizer, scheduler, args, train_dataloader, val_datal
 
 
 def save_model(model, epoch=None, optimizer=None, args=None, best=False):
-    # TODO: test, not sure if scheduler also part of checkpoint
+    """Function that saves the checkpoint of a model.
+
+    Args:
+        model: the model of the neural network
+        epochs: an int corresponding to the current epoch
+        optimizer: optimizer for the neural network
+        args: arguments processed by argparse
+        best: bool indicating to save checkpoint as model_best or model_last
+    """
     checkpoint_path = os.path.join(dotenv_values('.env')['PROJECT_DIR_PATH'], 'outputs/{}'.format(args.tag))
     if not os.path.exists(checkpoint_path):
         os.makedirs(checkpoint_path)
@@ -180,21 +201,38 @@ def save_model(model, epoch=None, optimizer=None, args=None, best=False):
         name = 'model_last.tar'
 
     save_dict = {
-        'epoch': epoch, 
-        'model_state_dict' : model.state_dict(),
-        'optim_state_dict' : optimizer.state_dict() 
+        'epoch': epoch,
+        'model_state_dict': model.state_dict(),
+        'optim_state_dict': optimizer.state_dict()
     }
     torch.save(save_dict, os.path.join(checkpoint_path, name))
 
 
-
 def evaluate_classification(predictions, labels):
+    """Function that checks the classification performance.
+
+    Args:
+        predictions: torch.tensor containing the predicted labels
+        labels: torch.tensor containing the ground truth labels
+
+    Returns: 
+        int indicating the number of correct predictions
+    """
     pred_labels = torch.argmax(predictions, dim=1)
     correct_pred = (pred_labels == labels).sum().item()
     return correct_pred
 
 
 def evaluate_reconstruction(reconstruction, voxel):
+    """Function that checks the reconstruction performance via the IoU.
+
+    Args:
+        reconstruction: torch.tensor containing the predicted voxel representations
+        labels: torch.tensor containing the ground voxel representations
+
+    Returns: 
+        an intersection over union / IoU score
+    """
     # Convert probabilities to occupancy grid
     reconstruction[reconstruction >= 0.5] = 1
     reconstruction[reconstruction < 0.5] = 0

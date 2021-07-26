@@ -1,3 +1,5 @@
+"""Main script to start training and inference."""
+
 import argparse
 import torch
 import numpy as np
@@ -13,6 +15,11 @@ from datasets import ShapeNetDataset
 
 
 def main(args):
+    """Function that initializes training and inference.
+    
+    Args:
+        args: Arguments processed by argparse
+    """
     # Get env variables
     env_vars = dotenv_values('.env')
 
@@ -96,7 +103,6 @@ def main(args):
         test(device, model, args, val_dataloader, args.num_running_visualizations)
     else:
         train(device, model, optimizer, scheduler, args, train_dataloader, val_dataloader)
-
 
 def get_dataloader(args, env_vars, split):
     if args.dataset == 'shapenet_pc':

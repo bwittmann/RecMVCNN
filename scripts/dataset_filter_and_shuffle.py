@@ -1,4 +1,5 @@
-from logging import raiseExceptions
+"""Script to estimate valid splits.
+"""
 import sys
 sys.path.append('./src')
 
@@ -50,7 +51,6 @@ if __name__ == '__main__':
     valid = valid[int(len(valid)*.7):]
     val = valid[int(len(valid)*.333):]
     test = valid[:int(len(valid)*.333)]
-
 
     with open("data/shapenet_pc/train.txt", "w") as outfile:
         outfile.write("\n".join(train))

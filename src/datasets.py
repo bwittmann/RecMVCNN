@@ -1,6 +1,7 @@
+"""Dataset for the different ShapeNet versions."""
+
 import json
 import os
-from sys import meta_path
 import torch
 from torch.utils.data import Dataset, DataLoader, dataset
 import cv2
@@ -10,7 +11,22 @@ from utils import read_as_3d_array, env_vars
 
 
 class ShapeNetDataset(Dataset):
+    """Dataset of ShapeNet.
+
+    This class can be used for different multi-view representations of the ShapeNet dataset 
+    like incomplete point clouds, point clouds, or colored meshed.
+    """
     def __init__(self, voxel_dir, rendering_dir, split='train', num_views=24, pointcloud_renderings=False):
+        """Initialization method.
+        
+        Args:
+            voxel_dir: absolute path to ground truth voxel grid
+            rendering_dir: absolute path to rendered multi-view images
+            split: either train, val, test, or overfit
+            num_views: int corresponding to the number of utilized multi-view images
+            pointcloud_renderings: boolean indicating if point cloud renderings 
+                should be used
+        """
         assert split in ['train', 'val', 'test', 'overfit']
         assert 1 <= num_views <= 24, "num_views must be between 1 and 24"
 
@@ -38,9 +54,11 @@ class ShapeNetDataset(Dataset):
                 self.data_ids.append(line)
 
     def __len__(self):
+        """Returns size of dataset."""
         return len(self.data_ids)
 
     def __getitem__(self, idx):
+        """Returns sample of dataset corresponding to idx."""
         shapenet_id = self.data_ids[idx]
         renderings_path = os.path.join(self.rendering_dir, shapenet_id, 'rendering')
         png_files = []
