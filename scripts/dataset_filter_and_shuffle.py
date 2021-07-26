@@ -1,5 +1,5 @@
-"""Script to estimate valid splits.
-"""
+"""Script to estimate valid splits."""
+
 import sys
 sys.path.append('./src')
 
